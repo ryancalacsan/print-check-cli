@@ -40,6 +40,14 @@ export function safeNumber(obj: PDFObject | undefined): number | undefined {
   return undefined;
 }
 
+/** Safe string extraction */
+export function safeString(obj: PDFObject | undefined): string | undefined {
+  if (!obj || obj.isNull()) return undefined;
+  if (obj.isString()) return obj.asString();
+  if (obj.isName()) return obj.asName();
+  return undefined;
+}
+
 /** Safe forEach that handles null objects */
 export function safeForEach(
   obj: PDFObject | undefined,

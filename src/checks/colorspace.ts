@@ -6,6 +6,7 @@ import {
   safeGetResolved,
   safeName,
   safeNumber,
+  safeString,
   safeForEach,
 } from "../engine/pdf-utils.js";
 import type { PDFObject } from "mupdf";
@@ -67,9 +68,7 @@ export const checkColorSpace: CheckFn = async (filePath, options) => {
       const intent = safeResolve(outputIntents.get(i));
       if (!intent) continue;
       const subtype = safeName(safeGet(intent, "S"));
-      const conditionObj = safeGet(intent, "OutputConditionIdentifier");
-      const condition =
-        conditionObj && !conditionObj.isNull() ? conditionObj.asString() : null;
+      const condition = safeString(safeGet(intent, "OutputConditionIdentifier"));
       details.push({
         message: `OutputIntent: ${subtype} — ${condition ?? "unknown"}`,
         status: "pass",
