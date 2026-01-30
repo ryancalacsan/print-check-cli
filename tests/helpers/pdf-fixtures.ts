@@ -226,3 +226,15 @@ export async function createNearThresholdDpiPdf(): Promise<string> {
   const pagePt = 72;
   return createWithImagePdf(285, 285, pagePt, pagePt);
 }
+
+/** Letter page with a 300×300px image drawn at 72×72pt (1in×1in).
+ *  CTM-based DPI = 300. Old page-fill method would calculate ~39 DPI. */
+export async function createScaledImagePdf(): Promise<string> {
+  const doc = await PDFDocument.create();
+  const png = createSolidPng(300, 300, 0, 0, 255); // blue RGB image
+  const image = await doc.embedPng(png);
+  const page = doc.addPage([612, 792]); // Letter
+  // Draw 300×300px image at 72×72pt (1 inch square)
+  page.drawImage(image, { x: 50, y: 600, width: 72, height: 72 });
+  return writePdf(doc, "scaled-image");
+}

@@ -1,15 +1,5 @@
+import * as mupdf from "mupdf";
 import type { CheckFn, CheckResult, CheckDetail } from "../types.js";
-import {
-  safeResolve,
-  safeGet,
-  safeGetResolved,
-  safeName,
-  safeNumber,
-  safeForEach,
-} from "../engine/pdf-utils.js";
-import type { PDFObject } from "mupdf";
-
-const PT_TO_INCH = 1 / 72;
 
 export const checkResolution: CheckFn = async (engines, options) => {
   const { mupdf: doc } = engines;
@@ -19,69 +9,71 @@ export const checkResolution: CheckFn = async (engines, options) => {
   const pageCount = doc.countPages();
   for (let i = 0; i < pageCount; i++) {
     const pageNum = i + 1;
-    const pageObj = doc.findPage(i);
+    const page = doc.loadPage(i);
 
-    // Get MediaBox for page dimensions
-    const mediaBox = safeGetResolved(pageObj, "MediaBox");
-    if (!mediaBox) continue;
+    // Collect image placements via the Device API
+    const placements: { image: mupdf.Image; ctm: mupdf.Matrix }[] = [];
 
-    const x0 = safeNumber(mediaBox.get(0)) ?? 0;
-    const y0 = safeNumber(mediaBox.get(1)) ?? 0;
-    const x1 = safeNumber(mediaBox.get(2)) ?? 0;
-    const y1 = safeNumber(mediaBox.get(3)) ?? 0;
+    const device = new mupdf.Device({
+      fillImage(image: mupdf.Image, ctm: mupdf.Matrix, _alpha: number) {
+        placements.push({ image, ctm });
+      },
+      fillImageMask(
+        image: mupdf.Image,
+        ctm: mupdf.Matrix,
+        _colorspace: mupdf.ColorSpace,
+        _color: number[],
+        _alpha: number,
+      ) {
+        placements.push({ image, ctm });
+      },
+    });
 
-    const pageWidthPt = x1 - x0;
-    const pageHeightPt = y1 - y0;
-    const pageWidthInch = Math.abs(pageWidthPt) * PT_TO_INCH;
-    const pageHeightInch = Math.abs(pageHeightPt) * PT_TO_INCH;
+    page.run(device, mupdf.Matrix.identity);
 
-    const resources = safeGetResolved(pageObj, "Resources");
-    if (!resources) continue;
+    for (const { image, ctm } of placements) {
+      const pixelWidth = image.getWidth();
+      const pixelHeight = image.getHeight();
+      if (!pixelWidth || !pixelHeight) continue;
 
-    const xobjects = safeGetResolved(resources, "XObject");
-    if (!xobjects) continue;
+      const [a, b, c, d] = ctm;
+      const renderedWidthPt = Math.sqrt(a * a + b * b);
+      const renderedHeightPt = Math.sqrt(c * c + d * d);
 
-    safeForEach(xobjects, (value: PDFObject, key: string) => {
-      const xobj = safeResolve(value);
-      if (!xobj) return;
-      const subtype = safeName(safeGet(xobj, "Subtype"));
-      if (subtype !== "Image") return;
+      const renderedWidthIn = renderedWidthPt / 72;
+      const renderedHeightIn = renderedHeightPt / 72;
 
-      const pixelWidth = safeNumber(safeGet(xobj, "Width"));
-      const pixelHeight = safeNumber(safeGet(xobj, "Height"));
-      if (!pixelWidth || !pixelHeight) return;
-
-      // MVP simplification: assume image fills the page
-      const dpiX = pageWidthInch > 0 ? pixelWidth / pageWidthInch : 0;
-      const dpiY = pageHeightInch > 0 ? pixelHeight / pageHeightInch : 0;
+      const dpiX = renderedWidthIn > 0 ? pixelWidth / renderedWidthIn : 0;
+      const dpiY = renderedHeightIn > 0 ? pixelHeight / renderedHeightIn : 0;
       const effectiveDpi = Math.min(dpiX, dpiY);
       const roundedDpi = Math.round(effectiveDpi);
 
+      const label = `${pixelWidth}×${pixelHeight}px image`;
       const threshold = options.minDpi;
       const warnThreshold = threshold * 0.9;
 
       if (effectiveDpi < warnThreshold) {
         details.push({
           page: pageNum,
-          message: `Image "${key}": ${roundedDpi} DPI (${pixelWidth}×${pixelHeight}px, min: ${threshold})`,
+          message: `${label}: ${roundedDpi} DPI (min: ${threshold})`,
           status: "fail",
         });
         worstStatus = "fail";
       } else if (effectiveDpi < threshold) {
         details.push({
           page: pageNum,
-          message: `Image "${key}": ${roundedDpi} DPI (${pixelWidth}×${pixelHeight}px, near threshold: ${threshold})`,
+          message: `${label}: ${roundedDpi} DPI (near threshold: ${threshold})`,
           status: "warn",
         });
         if (worstStatus === "pass") worstStatus = "warn";
       } else {
         details.push({
           page: pageNum,
-          message: `Image "${key}": ${roundedDpi} DPI (${pixelWidth}×${pixelHeight}px)`,
+          message: `${label}: ${roundedDpi} DPI`,
           status: "pass",
         });
       }
-    });
+    }
   }
 
   if (details.length === 0) {

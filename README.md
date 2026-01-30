@@ -121,13 +121,12 @@ npm test              # Run vitest
 
 ## Known Limitations (MVP)
 
-- **Resolution check** assumes each image fills the full page (conservative DPI estimate). Full CTM-based calculation is a post-MVP enhancement.
 - **Color space check** inspects page resources and image XObjects but does not trace inline content stream operators (`rg`, `RG`, `k`, `K`).
 - **mupdf PDFObject nulls** — mupdf.js returns PDFObject wrappers with `.isNull() === true` rather than JavaScript `null`. All mupdf access goes through `src/engine/pdf-utils.ts` safe wrappers to handle this.
 
 ## Roadmap
 
-- [ ] CTM-based DPI calculation for accurate per-image resolution
+- [x] CTM-based DPI calculation for accurate per-image resolution
 - [ ] Content stream operator parsing for inline color space usage
 - [x] JSON/CI-friendly output format (`--format json`)
 - [x] Configurable profiles (`--profile magazine` with preset thresholds)

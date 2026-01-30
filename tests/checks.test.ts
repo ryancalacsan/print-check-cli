@@ -18,6 +18,7 @@ import {
   createHighDpiImagePdf,
   createLowDpiImagePdf,
   createNearThresholdDpiPdf,
+  createScaledImagePdf,
 } from "./helpers/pdf-fixtures.js";
 
 const defaultOptions: CheckOptions = {
@@ -36,6 +37,7 @@ let highDpiPdf: string;
 let lowDpiPdf: string;
 let nearThresholdPdf: string;
 let rgbImagePdf: string;
+let scaledImagePdf: string;
 
 // PdfEngines loaded once per fixture
 let basicEngines: PdfEngines;
@@ -47,6 +49,7 @@ let highDpiEngines: PdfEngines;
 let lowDpiEngines: PdfEngines;
 let nearThresholdEngines: PdfEngines;
 let rgbImageEngines: PdfEngines;
+let scaledImageEngines: PdfEngines;
 
 beforeAll(async () => {
   basicPdf = await createBasicPdf();
@@ -58,6 +61,7 @@ beforeAll(async () => {
   lowDpiPdf = await createLowDpiImagePdf();
   nearThresholdPdf = await createNearThresholdDpiPdf();
   rgbImagePdf = await createWithImagePdf(100, 100);
+  scaledImagePdf = await createScaledImagePdf();
 
   basicEngines = await loadPdf(basicPdf);
   withBleedEngines = await loadPdf(withBleedPdf);
@@ -68,6 +72,7 @@ beforeAll(async () => {
   lowDpiEngines = await loadPdf(lowDpiPdf);
   nearThresholdEngines = await loadPdf(nearThresholdPdf);
   rgbImageEngines = await loadPdf(rgbImagePdf);
+  scaledImageEngines = await loadPdf(scaledImagePdf);
 });
 
 // ---------------------------------------------------------------------------
@@ -210,6 +215,19 @@ describe("Resolution check", () => {
     // 285 DPI is between 270 (90% of 300) and 300 — should be warn
     expect(result.status).toBe("warn");
     expect(result.details.some((d) => d.status === "warn")).toBe(true);
+  });
+
+  it("should pass scaled image at 300 DPI (CTM-based)", async () => {
+    // 300×300px image drawn at 72×72pt (1in×1in) on a Letter page
+    // CTM-based DPI = 300, old page-fill method would calculate ~39 DPI
+    const result = await checkResolution(scaledImageEngines, defaultOptions);
+    expect(result.status).toBe("pass");
+    expect(result.details.length).toBeGreaterThan(0);
+    expect(result.details[0].status).toBe("pass");
+    // Verify the label uses pixel dimensions
+    expect(result.details[0].message).toContain("300×300px image");
+    // Verify DPI is ~300, not ~39
+    expect(result.details[0].message).toMatch(/300 DPI/);
   });
 
   it("should respect custom minDpi option", async () => {
