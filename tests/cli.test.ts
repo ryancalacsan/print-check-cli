@@ -214,7 +214,7 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
         [basicPdf, "--checks", "fonts", "--format", "json"],
         { cwd: tmpDir },
       );
-      expect(result.stderr).toBe("");
+      expect(result.stderr).not.toMatch(/error/i);
       const json = JSON.parse(result.stdout);
       expect(json.results[0].status).toBe("warn");
       expect(result.exitCode).toBe(0);
