@@ -5,3 +5,4 @@ export { checkResolution } from "./resolution.js";
 export { checkPdfxCompliance } from "./pdfx-compliance.js";
 export { checkTac } from "./tac.js";
 export { checkTransparency } from "./transparency.js";
+export { checkPageSize } from "./page-size.js";

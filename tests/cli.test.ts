@@ -29,6 +29,7 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
     expect(result.stdout).toContain("Resolution");
     expect(result.stdout).toContain("Total Ink Coverage");
     expect(result.stdout).toContain("Transparency");
+    expect(result.stdout).toContain("Page Size");
   });
 
   it("should exit 1 when checks fail (unembedded fonts)", async () => {
@@ -72,7 +73,7 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
   it("should include correct result count in JSON output", async () => {
     const result = await runCli([basicPdf, "--format", "json"]);
     const json = JSON.parse(result.stdout);
-    expect(json.results).toHaveLength(7);
+    expect(json.results).toHaveLength(8);
     const checkNames = json.results.map((r: { check: string }) => r.check);
     expect(checkNames).toContain("Bleed & Trim");
     expect(checkNames).toContain("Fonts");
@@ -81,6 +82,7 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
     expect(checkNames).toContain("PDF/X Compliance");
     expect(checkNames).toContain("Total Ink Coverage");
     expect(checkNames).toContain("Transparency");
+    expect(checkNames).toContain("Page Size");
   });
 
   it("should respect --min-dpi option", async () => {

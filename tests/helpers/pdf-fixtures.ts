@@ -338,6 +338,18 @@ export async function createTransparentPdf(): Promise<string> {
   return writePdf(doc, "transparent");
 }
 
+/** Page 1 Letter (612×792pt), page 2 A4 (595×842pt) — mixed sizes */
+export async function createMixedSizePdf(): Promise<string> {
+  const doc = await PDFDocument.create();
+  // Page 1: US Letter
+  const p1 = doc.addPage([612, 792]);
+  p1.drawText("Letter page", { x: 50, y: 700, size: 18 });
+  // Page 2: A4
+  const p2 = doc.addPage([595, 842]);
+  p2.drawText("A4 page", { x: 50, y: 700, size: 18 });
+  return writePdf(doc, "mixed-size");
+}
+
 /** Letter page with a 300×300px image drawn at 72×72pt (1in×1in).
  *  CTM-based DPI = 300. Old page-fill method would calculate ~39 DPI. */
 export async function createScaledImagePdf(): Promise<string> {

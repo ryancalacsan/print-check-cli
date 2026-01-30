@@ -9,6 +9,7 @@ import { checkResolution } from "../src/checks/resolution.js";
 import { checkPdfxCompliance } from "../src/checks/pdfx-compliance.js";
 import { checkTac } from "../src/checks/tac.js";
 import { checkTransparency } from "../src/checks/transparency.js";
+import { checkPageSize } from "../src/checks/page-size.js";
 import { loadPdf, type PdfEngines } from "../src/engine/pdf-engine.js";
 import type { CheckOptions } from "../src/types.js";
 import {
@@ -28,6 +29,7 @@ import {
   createHighTacPdf,
   createNearThresholdTacPdf,
   createTransparentPdf,
+  createMixedSizePdf,
 } from "./helpers/pdf-fixtures.js";
 
 const defaultOptions: CheckOptions = {
@@ -54,6 +56,7 @@ let cmykPdf: string;
 let highTacPdf: string;
 let nearThresholdTacPdf: string;
 let transparentPdf: string;
+let mixedSizePdf: string;
 
 // PdfEngines loaded once per fixture
 let basicEngines: PdfEngines;
@@ -72,6 +75,7 @@ let cmykEngines: PdfEngines;
 let highTacEngines: PdfEngines;
 let nearThresholdTacEngines: PdfEngines;
 let transparentEngines: PdfEngines;
+let mixedSizeEngines: PdfEngines;
 
 beforeAll(async () => {
   basicPdf = await createBasicPdf();
@@ -90,6 +94,7 @@ beforeAll(async () => {
   highTacPdf = await createHighTacPdf();
   nearThresholdTacPdf = await createNearThresholdTacPdf();
   transparentPdf = await createTransparentPdf();
+  mixedSizePdf = await createMixedSizePdf();
 
   basicEngines = await loadPdf(basicPdf);
   withBleedEngines = await loadPdf(withBleedPdf);
@@ -107,6 +112,7 @@ beforeAll(async () => {
   highTacEngines = await loadPdf(highTacPdf);
   nearThresholdTacEngines = await loadPdf(nearThresholdTacPdf);
   transparentEngines = await loadPdf(transparentPdf);
+  mixedSizeEngines = await loadPdf(mixedSizePdf);
 });
 
 // ---------------------------------------------------------------------------
@@ -376,6 +382,52 @@ describe("Transparency check", () => {
     expect(result.summary).toContain("Transparency detected");
     expect(result.details.length).toBeGreaterThan(0);
     expect(result.details[0].status).toBe("warn");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Page Size
+// ---------------------------------------------------------------------------
+
+describe("Page Size check", () => {
+  it("should pass when all pages have the same size", async () => {
+    const result = await checkPageSize(basicEngines, defaultOptions);
+    expect(result.check).toBe("Page Size");
+    expect(result.status).toBe("pass");
+    expect(result.summary).toContain("All pages are");
+  });
+
+  it("should warn when pages have inconsistent sizes", async () => {
+    const result = await checkPageSize(mixedSizeEngines, defaultOptions);
+    expect(result.check).toBe("Page Size");
+    expect(result.status).toBe("warn");
+    expect(result.summary).toContain("Inconsistent page sizes");
+    expect(result.details.length).toBe(2);
+    // Page 1 is the reference so it passes; page 2 differs
+    expect(result.details[0].status).toBe("pass");
+    expect(result.details[1].status).toBe("warn");
+  });
+
+  it("should fail when pages don't match expected --page-size", async () => {
+    // basicPdf is Letter (215.9 × 279.4 mm), expect A4 (210x297)
+    const result = await checkPageSize(basicEngines, {
+      ...defaultOptions,
+      pageSize: "210x297",
+    });
+    expect(result.check).toBe("Page Size");
+    expect(result.status).toBe("fail");
+    expect(result.details[0].status).toBe("fail");
+    expect(result.details[0].message).toContain("expected");
+  });
+
+  it("should pass when pages match expected --page-size", async () => {
+    // basicPdf is Letter: 612×792pt = 215.9×279.4mm
+    const result = await checkPageSize(basicEngines, {
+      ...defaultOptions,
+      pageSize: "216x279",
+    });
+    expect(result.check).toBe("Page Size");
+    expect(result.status).toBe("pass");
   });
 });
 

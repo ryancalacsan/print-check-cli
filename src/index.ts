@@ -10,6 +10,7 @@ import {
   checkPdfxCompliance,
   checkTac,
   checkTransparency,
+  checkPageSize,
 } from "./checks/index.js";
 import { loadPdf } from "./engine/pdf-engine.js";
 import { printReport } from "./reporter/console.js";
@@ -25,6 +26,7 @@ const ALL_CHECKS: Record<string, CheckFn> = {
   pdfx: checkPdfxCompliance,
   tac: checkTac,
   transparency: checkTransparency,
+  pagesize: checkPageSize,
 };
 
 const OptionsSchema = z.object({
@@ -32,6 +34,7 @@ const OptionsSchema = z.object({
   colorSpace: z.enum(["cmyk", "any"]).optional(),
   bleed: z.coerce.number().nonnegative().optional(),
   maxTac: z.coerce.number().positive().optional(),
+  pageSize: z.string().optional(),
   checks: z
     .string()
     .default("all")
@@ -52,6 +55,7 @@ program
   .option("--color-space <mode>", "Expected color space: cmyk | any")
   .option("--bleed <mm>", "Required bleed in mm")
   .option("--max-tac <percent>", "Maximum total ink coverage %")
+  .option("--page-size <WxH>", "Expected page size in mm (e.g. 210x297)")
   .option("--checks <list>", "Comma-separated checks to run", "all")
   .option("--verbose", "Show detailed per-page results", false)
   .option("--format <type>", "Output format: text | json", "text")
@@ -71,6 +75,7 @@ program
       colorSpace: opts.colorSpace !== undefined ? opts.colorSpace : base.colorSpace,
       bleedMm: opts.bleed !== undefined ? opts.bleed : base.bleedMm,
       maxTac: opts.maxTac !== undefined ? opts.maxTac : base.maxTac,
+      pageSize: opts.pageSize !== undefined ? opts.pageSize : base.pageSize,
     };
 
     const checksToRun = opts.checks.filter((name) => {

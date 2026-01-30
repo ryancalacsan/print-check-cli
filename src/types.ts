@@ -20,6 +20,7 @@ export interface CheckOptions {
   colorSpace: "cmyk" | "any";
   bleedMm: number;
   maxTac: number;
+  pageSize?: string;
 }
 
 export type CheckFn = (

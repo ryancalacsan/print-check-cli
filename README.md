@@ -1,6 +1,6 @@
 # print-check-cli
 
-A Node.js + TypeScript CLI tool that validates print-ready PDF files. Runs seven checks and reports pass/warn/fail results in the terminal.
+A Node.js + TypeScript CLI tool that validates print-ready PDF files. Runs eight checks and reports pass/warn/fail results in the terminal.
 
 ## Checks
 
@@ -13,6 +13,7 @@ A Node.js + TypeScript CLI tool that validates print-ready PDF files. Runs seven
 | **PDF/X Compliance** | PDF/X standard detection (OutputIntents, version, output condition) — info only |
 | **Total Ink Coverage** | Maximum ink density (C+M+Y+K %) against configurable limit |
 | **Transparency** | Detects unflattened transparency (groups, soft masks, blend modes) |
+| **Page Size** | Verifies consistent page dimensions and optional expected size match |
 
 ## Usage
 
@@ -24,6 +25,7 @@ Options:
   --color-space <mode>     Expected color space: cmyk | any (default: cmyk)
   --bleed <mm>             Required bleed in mm (default: 3)
   --max-tac <percent>      Maximum total ink coverage % (default: 300)
+  --page-size <WxH>        Expected page size in mm (e.g. 210x297)
   --checks <list>          Comma-separated checks to run (default: all)
   --profile <name>         Print profile: standard | magazine | newspaper | large-format
   --verbose                Show detailed per-page results
@@ -108,7 +110,8 @@ src/
 │   ├── resolution.ts       # Image DPI check (mupdf)
 │   ├── pdfx-compliance.ts  # PDF/X standard detection (mupdf)
 │   ├── tac.ts              # Total ink coverage check (mupdf)
-│   └── transparency.ts     # Transparency detection check (mupdf)
+│   ├── transparency.ts     # Transparency detection check (mupdf)
+│   └── page-size.ts        # Page size consistency check (pdf-lib)
 ├── engine/
 │   ├── pdf-engine.ts       # Unified PDF document loader (mupdf + pdf-lib)
 │   └── pdf-utils.ts        # Safe wrappers for mupdf PDFObject API
