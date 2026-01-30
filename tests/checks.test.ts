@@ -165,12 +165,12 @@ describe("Font check", () => {
 // ---------------------------------------------------------------------------
 
 describe("Color Space check", () => {
-  it("should detect RGB in basic PDF text (Device API catches inline rg operator)", async () => {
+  it("should pass for neutral RGB colors (black text is CMYK-identical)", async () => {
     const result = await checkColorSpace(basicEngines, defaultOptions);
     expect(result.check).toBe("Color Space");
-    // pdf-lib draws text with rgb() color which uses DeviceRGB via rg operator.
-    // The Device API correctly detects this as RGB usage.
-    expect(result.status).toBe("fail");
+    // pdf-lib draws text with rgb(0,0,0) — neutral black maps to CMYK without color shift.
+    // Neutral RGB colors (all channels equal) are now skipped.
+    expect(result.status).toBe("pass");
   });
 
   it("should skip when color-space is 'any'", async () => {

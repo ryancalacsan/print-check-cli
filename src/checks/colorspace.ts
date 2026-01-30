@@ -56,7 +56,7 @@ export const checkColorSpace: CheckFn = async (engines, options) => {
         _color: number[],
         _alpha: number,
       ) {
-        classifyColorSpace(colorspace, pageNum, "fill path");
+        classifyColorSpace(colorspace, pageNum, "fill path", _color);
       },
       strokePath(
         _path: mupdf.Path,
@@ -66,7 +66,7 @@ export const checkColorSpace: CheckFn = async (engines, options) => {
         _color: number[],
         _alpha: number,
       ) {
-        classifyColorSpace(colorspace, pageNum, "stroke path");
+        classifyColorSpace(colorspace, pageNum, "stroke path", _color);
       },
       fillText(
         _text: mupdf.Text,
@@ -75,7 +75,7 @@ export const checkColorSpace: CheckFn = async (engines, options) => {
         _color: number[],
         _alpha: number,
       ) {
-        classifyColorSpace(colorspace, pageNum, "fill text");
+        classifyColorSpace(colorspace, pageNum, "fill text", _color);
       },
       strokeText(
         _text: mupdf.Text,
@@ -85,7 +85,7 @@ export const checkColorSpace: CheckFn = async (engines, options) => {
         _color: number[],
         _alpha: number,
       ) {
-        classifyColorSpace(colorspace, pageNum, "stroke text");
+        classifyColorSpace(colorspace, pageNum, "stroke text", _color);
       },
       fillImage(image: mupdf.Image, _ctm: mupdf.Matrix, _alpha: number) {
         const cs = image.getColorSpace();
@@ -102,19 +102,25 @@ export const checkColorSpace: CheckFn = async (engines, options) => {
         _color: number[],
         _alpha: number,
       ) {
-        classifyColorSpace(colorspace, pageNum, "image mask");
+        classifyColorSpace(colorspace, pageNum, "image mask", _color);
       },
     });
 
-    page.run(device, mupdf.Matrix.identity);
+    page.runPageContents(device, mupdf.Matrix.identity);
   }
 
   function classifyColorSpace(
     cs: mupdf.ColorSpace,
     pageNum: number,
     source: string,
+    color?: number[],
   ) {
     if (cs.isRGB()) {
+      // Skip neutral colors (all channels equal — maps to CMYK gray/white/black)
+      if (color && color.length >= 3) {
+        const [r, g, b] = color;
+        if (r === g && g === b) return;
+      }
       if (!rgbPages.includes(pageNum)) rgbPages.push(pageNum);
       details.push({
         page: pageNum,
