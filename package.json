@@ -16,9 +16,25 @@
     "prepress",
     "cli"
   ],
-  "author": "",
+  "author": "Ryan Calacsan (https://github.com/ryancalacsan)",
   "license": "ISC",
   "description": "CLI tool to validate print-ready PDF files",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryancalacsan/print-check-cli.git"
+  },
+  "homepage": "https://github.com/ryancalacsan/print-check-cli#readme",
+  "bugs": {
+    "url": "https://github.com/ryancalacsan/print-check-cli/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "dependencies": {
     "commander": "^14.0.2",
     "mupdf": "^1.27.0",
