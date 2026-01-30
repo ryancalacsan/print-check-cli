@@ -19,6 +19,7 @@ import {
   createLowDpiImagePdf,
   createNearThresholdDpiPdf,
   createScaledImagePdf,
+  createRgbTextPdf,
 } from "./helpers/pdf-fixtures.js";
 
 const defaultOptions: CheckOptions = {
@@ -38,6 +39,7 @@ let lowDpiPdf: string;
 let nearThresholdPdf: string;
 let rgbImagePdf: string;
 let scaledImagePdf: string;
+let rgbTextPdf: string;
 
 // PdfEngines loaded once per fixture
 let basicEngines: PdfEngines;
@@ -50,6 +52,7 @@ let lowDpiEngines: PdfEngines;
 let nearThresholdEngines: PdfEngines;
 let rgbImageEngines: PdfEngines;
 let scaledImageEngines: PdfEngines;
+let rgbTextEngines: PdfEngines;
 
 beforeAll(async () => {
   basicPdf = await createBasicPdf();
@@ -62,6 +65,7 @@ beforeAll(async () => {
   nearThresholdPdf = await createNearThresholdDpiPdf();
   rgbImagePdf = await createWithImagePdf(100, 100);
   scaledImagePdf = await createScaledImagePdf();
+  rgbTextPdf = await createRgbTextPdf();
 
   basicEngines = await loadPdf(basicPdf);
   withBleedEngines = await loadPdf(withBleedPdf);
@@ -73,6 +77,7 @@ beforeAll(async () => {
   nearThresholdEngines = await loadPdf(nearThresholdPdf);
   rgbImageEngines = await loadPdf(rgbImagePdf);
   scaledImageEngines = await loadPdf(scaledImagePdf);
+  rgbTextEngines = await loadPdf(rgbTextPdf);
 });
 
 // ---------------------------------------------------------------------------
@@ -154,11 +159,12 @@ describe("Font check", () => {
 // ---------------------------------------------------------------------------
 
 describe("Color Space check", () => {
-  it("should pass when no RGB color spaces are used", async () => {
+  it("should detect RGB in basic PDF text (Device API catches inline rg operator)", async () => {
     const result = await checkColorSpace(basicEngines, defaultOptions);
     expect(result.check).toBe("Color Space");
-    // Basic pdf-lib PDF with text only should pass or warn
-    expect(["pass", "warn"]).toContain(result.status);
+    // pdf-lib draws text with rgb() color which uses DeviceRGB via rg operator.
+    // The Device API correctly detects this as RGB usage.
+    expect(result.status).toBe("fail");
   });
 
   it("should skip when color-space is 'any'", async () => {
@@ -175,6 +181,13 @@ describe("Color Space check", () => {
     expect(result.check).toBe("Color Space");
     // An embedded PNG is RGB — should be detected
     expect(["fail", "warn"]).toContain(result.status);
+  });
+
+  it("should fail when text uses RGB color (inline operators)", async () => {
+    const result = await checkColorSpace(rgbTextEngines, defaultOptions);
+    expect(result.check).toBe("Color Space");
+    expect(result.status).toBe("fail");
+    expect(result.details.some((d) => d.message.includes("RGB") && d.message.includes("text"))).toBe(true);
   });
 
   it("should handle OutputIntents without crashing", async () => {

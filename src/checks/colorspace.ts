@@ -1,46 +1,12 @@
+import * as mupdf from "mupdf";
 import type { CheckFn, CheckResult, CheckDetail } from "../types.js";
 import {
   safeResolve,
   safeGet,
   safeGetResolved,
   safeName,
-  safeNumber,
   safeString,
-  safeForEach,
 } from "../engine/pdf-utils.js";
-import type { PDFObject } from "mupdf";
-
-function getColorSpaceName(csObj: PDFObject): string {
-  if (csObj.isNull()) return "null";
-  if (csObj.isName()) return csObj.asName();
-  if (csObj.isArray() && csObj.length > 0) {
-    const first = csObj.get(0);
-    if (first && !first.isNull() && first.isName()) return first.asName();
-  }
-  return csObj.toString();
-}
-
-function isCmykCompatible(name: string): boolean {
-  const lower = name.toLowerCase();
-  return (
-    lower.includes("devicecmyk") ||
-    lower.includes("iccbased") ||
-    lower.includes("separation") ||
-    lower.includes("devicen") ||
-    lower.includes("devicegray") ||
-    lower.includes("indexed")
-  );
-}
-
-function hasRGBProfile(csObj: PDFObject): boolean {
-  if (csObj.isArray() && csObj.length >= 2) {
-    const stream = safeResolve(csObj.get(1));
-    if (!stream) return false;
-    const n = safeNumber(safeGet(stream, "N"));
-    return n === 3;
-  }
-  return false;
-}
 
 export const checkColorSpace: CheckFn = async (engines, options) => {
   if (options.colorSpace === "any") {
@@ -75,79 +41,108 @@ export const checkColorSpace: CheckFn = async (engines, options) => {
     }
   }
 
+  // Walk each page's content stream via the Device API
   const pageCount = doc.countPages();
   for (let i = 0; i < pageCount; i++) {
     const pageNum = i + 1;
-    const pageObj = doc.findPage(i);
-    const resources = safeGetResolved(pageObj, "Resources");
-    if (!resources) continue;
+    const page = doc.loadPage(i);
 
-    // Check page-level color spaces
-    const csDict = safeGetResolved(resources, "ColorSpace");
-    if (csDict) {
-      safeForEach(csDict, (value: PDFObject, key: string) => {
-        const resolved = safeResolve(value);
-        if (!resolved) return;
-        const csName = getColorSpaceName(resolved);
-
-        if (
-          csName.toLowerCase().includes("separation") ||
-          csName.toLowerCase().includes("devicen")
-        ) {
-          spotColors.push(key);
+    const device = new mupdf.Device({
+      fillPath(
+        _path: mupdf.Path,
+        _evenOdd: boolean,
+        _ctm: mupdf.Matrix,
+        colorspace: mupdf.ColorSpace,
+        _color: number[],
+        _alpha: number,
+      ) {
+        classifyColorSpace(colorspace, pageNum, "fill path");
+      },
+      strokePath(
+        _path: mupdf.Path,
+        _stroke: mupdf.StrokeState,
+        _ctm: mupdf.Matrix,
+        colorspace: mupdf.ColorSpace,
+        _color: number[],
+        _alpha: number,
+      ) {
+        classifyColorSpace(colorspace, pageNum, "stroke path");
+      },
+      fillText(
+        _text: mupdf.Text,
+        _ctm: mupdf.Matrix,
+        colorspace: mupdf.ColorSpace,
+        _color: number[],
+        _alpha: number,
+      ) {
+        classifyColorSpace(colorspace, pageNum, "fill text");
+      },
+      strokeText(
+        _text: mupdf.Text,
+        _stroke: mupdf.StrokeState,
+        _ctm: mupdf.Matrix,
+        colorspace: mupdf.ColorSpace,
+        _color: number[],
+        _alpha: number,
+      ) {
+        classifyColorSpace(colorspace, pageNum, "stroke text");
+      },
+      fillImage(image: mupdf.Image, _ctm: mupdf.Matrix, _alpha: number) {
+        const cs = image.getColorSpace();
+        if (cs) {
+          const w = image.getWidth();
+          const h = image.getHeight();
+          classifyColorSpace(cs, pageNum, `image (${w}×${h}px)`);
         }
+      },
+      fillImageMask(
+        _image: mupdf.Image,
+        _ctm: mupdf.Matrix,
+        colorspace: mupdf.ColorSpace,
+        _color: number[],
+        _alpha: number,
+      ) {
+        classifyColorSpace(colorspace, pageNum, "image mask");
+      },
+    });
 
-        if (csName.toLowerCase().includes("devicergb")) {
-          rgbPages.push(pageNum);
-          details.push({
-            page: pageNum,
-            message: `Color space "${key}" uses DeviceRGB`,
-            status: "warn",
-          });
-          if (worstStatus === "pass") worstStatus = "warn";
-        }
+    page.run(device, mupdf.Matrix.identity);
+  }
+
+  function classifyColorSpace(
+    cs: mupdf.ColorSpace,
+    pageNum: number,
+    source: string,
+  ) {
+    if (cs.isRGB()) {
+      if (!rgbPages.includes(pageNum)) rgbPages.push(pageNum);
+      details.push({
+        page: pageNum,
+        message: `RGB ${source}`,
+        status: "fail",
       });
-    }
-
-    // Check image XObjects for color spaces
-    const xobjects = safeGetResolved(resources, "XObject");
-    if (xobjects) {
-      safeForEach(xobjects, (value: PDFObject, key: string) => {
-        const xobj = safeResolve(value);
-        if (!xobj) return;
-        const subtype = safeName(safeGet(xobj, "Subtype"));
-        if (subtype !== "Image") return;
-
-        const imgCs = safeGetResolved(xobj, "ColorSpace");
-        if (!imgCs) return;
-
-        const csName = getColorSpaceName(imgCs);
-        if (
-          csName.toLowerCase().includes("devicergb") ||
-          (csName.toLowerCase().includes("iccbased") && hasRGBProfile(imgCs))
-        ) {
-          if (!rgbPages.includes(pageNum)) rgbPages.push(pageNum);
-          details.push({
-            page: pageNum,
-            message: `Image "${key}" uses RGB color space`,
-            status: "fail",
-          });
-          worstStatus = "fail";
-        } else if (!isCmykCompatible(csName)) {
-          details.push({
-            page: pageNum,
-            message: `Image "${key}" uses "${csName}"`,
-            status: "warn",
-          });
-          if (worstStatus === "pass") worstStatus = "warn";
-        }
+      worstStatus = "fail";
+    } else if (cs.isDeviceN()) {
+      const name = cs.getName();
+      if (!spotColors.includes(name)) spotColors.push(name);
+    } else if (cs.getType() === "Separation") {
+      const name = cs.getName();
+      if (!spotColors.includes(name)) spotColors.push(name);
+    } else if (cs.isGray() || cs.isCMYK()) {
+      // Compatible — no action needed
+    } else {
+      details.push({
+        page: pageNum,
+        message: `Unknown color space "${cs.getName()}" in ${source}`,
+        status: "warn",
       });
+      if (worstStatus === "pass") worstStatus = "warn";
     }
   }
 
   if (spotColors.length > 0) {
     details.push({
-      message: `Spot colors found: ${[...new Set(spotColors)].join(", ")}`,
+      message: `Spot colors found: ${spotColors.join(", ")}`,
       status: "pass",
     });
   }

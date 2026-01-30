@@ -194,6 +194,21 @@ export async function createEmbeddedFontPdf(): Promise<string> {
   return writePdf(doc, "embedded-font");
 }
 
+/** Letter page with red RGB text — exercises inline content stream operators (rg/RG) */
+export async function createRgbTextPdf(): Promise<string> {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const page = doc.addPage([612, 792]);
+  page.drawText("Red RGB Text", {
+    x: 50,
+    y: 700,
+    size: 24,
+    font,
+    color: rgb(1, 0, 0),
+  });
+  return writePdf(doc, "rgb-text");
+}
+
 /** Embeds a solid-color PNG at given pixel size on given page size */
 export async function createWithImagePdf(
   pxW: number,
