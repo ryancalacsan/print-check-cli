@@ -86,6 +86,35 @@ Built-in profiles provide preset thresholds for common print scenarios. Explicit
 - `0` — all checks passed (or warned)
 - `1` — one or more checks failed
 
+## Configuration
+
+Create a config file to set default options for your project:
+
+### `.printcheckrc` / `.printcheckrc.json`
+```json
+{
+  "minDpi": 300,
+  "colorSpace": "cmyk",
+  "bleed": 5,
+  "maxTac": 300,
+  "checks": "bleed,fonts,colorspace",
+  "profile": "magazine"
+}
+```
+
+### `printcheck.config.js`
+```js
+export default {
+  minDpi: 150,
+  colorSpace: "any",
+  bleed: 0,
+  profile: "newspaper",
+};
+```
+
+Config files are auto-discovered from the current directory upward.
+CLI flags always override config file values.
+
 ## Tech Stack
 
 | Package | Purpose |

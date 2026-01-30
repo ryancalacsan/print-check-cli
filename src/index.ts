@@ -16,6 +16,7 @@ import { loadPdf } from "./engine/pdf-engine.js";
 import { printReport } from "./reporter/console.js";
 import { buildJsonReport } from "./reporter/json.js";
 import { PROFILES, PROFILE_NAMES } from "./profiles.js";
+import { loadConfig } from "./config.js";
 import type { CheckFn, CheckOptions, JsonReport } from "./types.js";
 
 const ALL_CHECKS: Record<string, CheckFn> = {
@@ -61,13 +62,25 @@ program
   .option("--format <type>", "Output format: text | json", "text")
   .option("--profile <name>", "Print profile: standard | magazine | newspaper | large-format")
   .action(async (files: string[], rawOpts: Record<string, unknown>) => {
-    const parsed = OptionsSchema.safeParse(rawOpts);
+    const config = await loadConfig();
+
+    const stripped: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(rawOpts)) {
+      if (value !== undefined) stripped[key] = value;
+    }
+
+    const merged = { ...config?.options, ...stripped };
+    const parsed = OptionsSchema.safeParse(merged);
     if (!parsed.success) {
       console.error("Invalid options:", parsed.error.format());
       process.exit(1);
     }
 
     const opts = parsed.data;
+
+    if (config && opts.verbose) {
+      console.log(`Using config: ${config.filePath}`);
+    }
 
     const base = opts.profile ? PROFILES[opts.profile] : PROFILES.standard;
     const checkOptions: CheckOptions = {
