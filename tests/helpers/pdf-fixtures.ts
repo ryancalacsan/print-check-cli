@@ -316,6 +316,28 @@ export async function createNearThresholdTacPdf(): Promise<string> {
   return createCmykRectPdf("cmyk-near-tac", 0.70, 0.65, 0.60, 0.90);
 }
 
+/** Single page with a semi-transparent rectangle — exercises transparency groups */
+export async function createTransparentPdf(): Promise<string> {
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([612, 792]);
+  page.drawRectangle({
+    x: 50,
+    y: 600,
+    width: 200,
+    height: 100,
+    color: rgb(1, 0, 0),
+    opacity: 0.5,
+  });
+  page.drawText("Transparent overlay", {
+    x: 60,
+    y: 640,
+    size: 18,
+    color: rgb(0, 0, 1),
+    opacity: 0.7,
+  });
+  return writePdf(doc, "transparent");
+}
+
 /** Letter page with a 300×300px image drawn at 72×72pt (1in×1in).
  *  CTM-based DPI = 300. Old page-fill method would calculate ~39 DPI. */
 export async function createScaledImagePdf(): Promise<string> {

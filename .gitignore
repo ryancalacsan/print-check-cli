@@ -3,3 +3,4 @@ dist/
 *.pdf
 .claude/
 test files/
+.DS_Store

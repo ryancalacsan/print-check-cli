@@ -8,6 +8,7 @@ import { checkColorSpace } from "../src/checks/colorspace.js";
 import { checkResolution } from "../src/checks/resolution.js";
 import { checkPdfxCompliance } from "../src/checks/pdfx-compliance.js";
 import { checkTac } from "../src/checks/tac.js";
+import { checkTransparency } from "../src/checks/transparency.js";
 import { loadPdf, type PdfEngines } from "../src/engine/pdf-engine.js";
 import type { CheckOptions } from "../src/types.js";
 import {
@@ -26,6 +27,7 @@ import {
   createCmykPdf,
   createHighTacPdf,
   createNearThresholdTacPdf,
+  createTransparentPdf,
 } from "./helpers/pdf-fixtures.js";
 
 const defaultOptions: CheckOptions = {
@@ -51,6 +53,7 @@ let pdfxPdf: string;
 let cmykPdf: string;
 let highTacPdf: string;
 let nearThresholdTacPdf: string;
+let transparentPdf: string;
 
 // PdfEngines loaded once per fixture
 let basicEngines: PdfEngines;
@@ -68,6 +71,7 @@ let pdfxEngines: PdfEngines;
 let cmykEngines: PdfEngines;
 let highTacEngines: PdfEngines;
 let nearThresholdTacEngines: PdfEngines;
+let transparentEngines: PdfEngines;
 
 beforeAll(async () => {
   basicPdf = await createBasicPdf();
@@ -85,6 +89,7 @@ beforeAll(async () => {
   cmykPdf = await createCmykPdf();
   highTacPdf = await createHighTacPdf();
   nearThresholdTacPdf = await createNearThresholdTacPdf();
+  transparentPdf = await createTransparentPdf();
 
   basicEngines = await loadPdf(basicPdf);
   withBleedEngines = await loadPdf(withBleedPdf);
@@ -101,6 +106,7 @@ beforeAll(async () => {
   cmykEngines = await loadPdf(cmykPdf);
   highTacEngines = await loadPdf(highTacPdf);
   nearThresholdTacEngines = await loadPdf(nearThresholdTacPdf);
+  transparentEngines = await loadPdf(transparentPdf);
 });
 
 // ---------------------------------------------------------------------------
@@ -348,6 +354,28 @@ describe("Total Ink Coverage check", () => {
       maxTac: 350,
     });
     expect(result2.status).toBe("pass");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Transparency
+// ---------------------------------------------------------------------------
+
+describe("Transparency check", () => {
+  it("should pass when no transparency is present", async () => {
+    const result = await checkTransparency(basicEngines, defaultOptions);
+    expect(result.check).toBe("Transparency");
+    expect(result.status).toBe("pass");
+    expect(result.summary).toContain("No transparency detected");
+  });
+
+  it("should warn when transparency is present", async () => {
+    const result = await checkTransparency(transparentEngines, defaultOptions);
+    expect(result.check).toBe("Transparency");
+    expect(result.status).toBe("warn");
+    expect(result.summary).toContain("Transparency detected");
+    expect(result.details.length).toBeGreaterThan(0);
+    expect(result.details[0].status).toBe("warn");
   });
 });
 

@@ -1,6 +1,6 @@
 # print-check-cli
 
-A Node.js + TypeScript CLI tool that validates print-ready PDF files. Runs four checks and reports pass/warn/fail results in the terminal.
+A Node.js + TypeScript CLI tool that validates print-ready PDF files. Runs seven checks and reports pass/warn/fail results in the terminal.
 
 ## Checks
 
@@ -12,6 +12,7 @@ A Node.js + TypeScript CLI tool that validates print-ready PDF files. Runs four 
 | **Resolution** | Raster image DPI against a configurable minimum |
 | **PDF/X Compliance** | PDF/X standard detection (OutputIntents, version, output condition) — info only |
 | **Total Ink Coverage** | Maximum ink density (C+M+Y+K %) against configurable limit |
+| **Transparency** | Detects unflattened transparency (groups, soft masks, blend modes) |
 
 ## Usage
 
@@ -106,7 +107,8 @@ src/
 │   ├── colorspace.ts       # Color space detection (mupdf)
 │   ├── resolution.ts       # Image DPI check (mupdf)
 │   ├── pdfx-compliance.ts  # PDF/X standard detection (mupdf)
-│   └── tac.ts              # Total ink coverage check (mupdf)
+│   ├── tac.ts              # Total ink coverage check (mupdf)
+│   └── transparency.ts     # Transparency detection check (mupdf)
 ├── engine/
 │   ├── pdf-engine.ts       # Unified PDF document loader (mupdf + pdf-lib)
 │   └── pdf-utils.ts        # Safe wrappers for mupdf PDFObject API
