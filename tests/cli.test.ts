@@ -21,12 +21,13 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
     expect(result.stderr).toMatch(/not found/i);
   });
 
-  it("should output all 4 check names in text mode", async () => {
+  it("should output all check names in text mode", async () => {
     const result = await runCli([basicPdf]);
     expect(result.stdout).toContain("Bleed & Trim");
     expect(result.stdout).toContain("Fonts");
     expect(result.stdout).toContain("Color Space");
     expect(result.stdout).toContain("Resolution");
+    expect(result.stdout).toContain("Total Ink Coverage");
   });
 
   it("should exit 1 when checks fail (unembedded fonts)", async () => {
@@ -70,13 +71,14 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
   it("should include correct result count in JSON output", async () => {
     const result = await runCli([basicPdf, "--format", "json"]);
     const json = JSON.parse(result.stdout);
-    expect(json.results).toHaveLength(5);
+    expect(json.results).toHaveLength(6);
     const checkNames = json.results.map((r: { check: string }) => r.check);
     expect(checkNames).toContain("Bleed & Trim");
     expect(checkNames).toContain("Fonts");
     expect(checkNames).toContain("Color Space");
     expect(checkNames).toContain("Resolution");
     expect(checkNames).toContain("PDF/X Compliance");
+    expect(checkNames).toContain("Total Ink Coverage");
   });
 
   it("should respect --min-dpi option", async () => {

@@ -7,6 +7,7 @@ import { checkFonts } from "../src/checks/fonts.js";
 import { checkColorSpace } from "../src/checks/colorspace.js";
 import { checkResolution } from "../src/checks/resolution.js";
 import { checkPdfxCompliance } from "../src/checks/pdfx-compliance.js";
+import { checkTac } from "../src/checks/tac.js";
 import { loadPdf, type PdfEngines } from "../src/engine/pdf-engine.js";
 import type { CheckOptions } from "../src/types.js";
 import {
@@ -22,12 +23,16 @@ import {
   createScaledImagePdf,
   createRgbTextPdf,
   createPdfxCompliantPdf,
+  createCmykPdf,
+  createHighTacPdf,
+  createNearThresholdTacPdf,
 } from "./helpers/pdf-fixtures.js";
 
 const defaultOptions: CheckOptions = {
   minDpi: 300,
   colorSpace: "cmyk",
   bleedMm: 3,
+  maxTac: 300,
 };
 
 // Fixture paths populated in beforeAll
@@ -43,6 +48,9 @@ let rgbImagePdf: string;
 let scaledImagePdf: string;
 let rgbTextPdf: string;
 let pdfxPdf: string;
+let cmykPdf: string;
+let highTacPdf: string;
+let nearThresholdTacPdf: string;
 
 // PdfEngines loaded once per fixture
 let basicEngines: PdfEngines;
@@ -57,6 +65,9 @@ let rgbImageEngines: PdfEngines;
 let scaledImageEngines: PdfEngines;
 let rgbTextEngines: PdfEngines;
 let pdfxEngines: PdfEngines;
+let cmykEngines: PdfEngines;
+let highTacEngines: PdfEngines;
+let nearThresholdTacEngines: PdfEngines;
 
 beforeAll(async () => {
   basicPdf = await createBasicPdf();
@@ -71,6 +82,9 @@ beforeAll(async () => {
   scaledImagePdf = await createScaledImagePdf();
   rgbTextPdf = await createRgbTextPdf();
   pdfxPdf = await createPdfxCompliantPdf();
+  cmykPdf = await createCmykPdf();
+  highTacPdf = await createHighTacPdf();
+  nearThresholdTacPdf = await createNearThresholdTacPdf();
 
   basicEngines = await loadPdf(basicPdf);
   withBleedEngines = await loadPdf(withBleedPdf);
@@ -84,6 +98,9 @@ beforeAll(async () => {
   scaledImageEngines = await loadPdf(scaledImagePdf);
   rgbTextEngines = await loadPdf(rgbTextPdf);
   pdfxEngines = await loadPdf(pdfxPdf);
+  cmykEngines = await loadPdf(cmykPdf);
+  highTacEngines = await loadPdf(highTacPdf);
+  nearThresholdTacEngines = await loadPdf(nearThresholdTacPdf);
 });
 
 // ---------------------------------------------------------------------------
@@ -278,6 +295,59 @@ describe("PDF/X Compliance check", () => {
     expect(result.check).toBe("PDF/X Compliance");
     expect(result.status).toBe("pass");
     expect(result.summary).toContain("No PDF/X");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Total Ink Coverage (TAC)
+// ---------------------------------------------------------------------------
+
+describe("Total Ink Coverage check", () => {
+  it("should pass for CMYK content below threshold", async () => {
+    const result = await checkTac(cmykEngines, defaultOptions);
+    expect(result.check).toBe("Total Ink Coverage");
+    expect(result.status).toBe("pass");
+    expect(result.summary).toContain("within TAC limit");
+  });
+
+  it("should fail for content above threshold", async () => {
+    const result = await checkTac(highTacEngines, defaultOptions);
+    expect(result.check).toBe("Total Ink Coverage");
+    expect(result.status).toBe("fail");
+    expect(result.summary).toContain("Max TAC:");
+    expect(result.summary).toContain("300%");
+  });
+
+  it("should warn near threshold", async () => {
+    // 285% is above 90% of 300% (270%) but below 300%
+    const result = await checkTac(nearThresholdTacEngines, defaultOptions);
+    expect(result.check).toBe("Total Ink Coverage");
+    expect(result.status).toBe("warn");
+    expect(result.details.some((d) => d.status === "warn")).toBe(true);
+  });
+
+  it("should pass when no CMYK content (RGB-only PDF)", async () => {
+    // basicPdf uses rgb(0,0,0) text — no CMYK ink to measure
+    const result = await checkTac(basicEngines, defaultOptions);
+    expect(result.check).toBe("Total Ink Coverage");
+    expect(result.status).toBe("pass");
+    expect(result.summary).toContain("within TAC limit");
+  });
+
+  it("should respect custom maxTac option", async () => {
+    // Near-threshold PDF at ~285% should fail with a lower limit of 280%
+    const result = await checkTac(nearThresholdTacEngines, {
+      ...defaultOptions,
+      maxTac: 280,
+    });
+    expect(result.status).toBe("fail");
+
+    // Same PDF should pass with a higher limit of 350%
+    const result2 = await checkTac(nearThresholdTacEngines, {
+      ...defaultOptions,
+      maxTac: 350,
+    });
+    expect(result2.status).toBe("pass");
   });
 });
 

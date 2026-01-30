@@ -11,6 +11,7 @@ A Node.js + TypeScript CLI tool that validates print-ready PDF files. Runs four 
 | **Color Space** | CMYK compliance, RGB detection, spot color reporting |
 | **Resolution** | Raster image DPI against a configurable minimum |
 | **PDF/X Compliance** | PDF/X standard detection (OutputIntents, version, output condition) — info only |
+| **Total Ink Coverage** | Maximum ink density (C+M+Y+K %) against configurable limit |
 
 ## Usage
 
@@ -21,6 +22,7 @@ Options:
   --min-dpi <number>       Minimum acceptable DPI (default: 300)
   --color-space <mode>     Expected color space: cmyk | any (default: cmyk)
   --bleed <mm>             Required bleed in mm (default: 3)
+  --max-tac <percent>      Maximum total ink coverage % (default: 300)
   --checks <list>          Comma-separated checks to run (default: all)
   --profile <name>         Print profile: standard | magazine | newspaper | large-format
   --verbose                Show detailed per-page results
@@ -67,12 +69,12 @@ print-check *.pdf --format json
 
 Built-in profiles provide preset thresholds for common print scenarios. Explicit CLI flags override profile defaults.
 
-| Profile | minDpi | colorSpace | bleedMm | Use case |
-|---------|--------|------------|---------|----------|
-| `standard` | 300 | cmyk | 3 | General commercial print (default) |
-| `magazine` | 300 | cmyk | 5 | Magazine / perfect-bound |
-| `newspaper` | 150 | any | 0 | Newsprint / low-fidelity |
-| `large-format` | 150 | cmyk | 5 | Banners, posters, signage |
+| Profile | minDpi | colorSpace | bleedMm | maxTac | Use case |
+|---------|--------|------------|---------|--------|----------|
+| `standard` | 300 | cmyk | 3 | 300 | General commercial print (default) |
+| `magazine` | 300 | cmyk | 5 | 300 | Magazine / perfect-bound |
+| `newspaper` | 150 | any | 0 | 240 | Newsprint / low-fidelity |
+| `large-format` | 150 | cmyk | 5 | 300 | Banners, posters, signage |
 
 ### Exit codes
 
@@ -103,7 +105,8 @@ src/
 │   ├── fonts.ts            # Font embedding check (mupdf)
 │   ├── colorspace.ts       # Color space detection (mupdf)
 │   ├── resolution.ts       # Image DPI check (mupdf)
-│   └── pdfx-compliance.ts  # PDF/X standard detection (mupdf)
+│   ├── pdfx-compliance.ts  # PDF/X standard detection (mupdf)
+│   └── tac.ts              # Total ink coverage check (mupdf)
 ├── engine/
 │   ├── pdf-engine.ts       # Unified PDF document loader (mupdf + pdf-lib)
 │   └── pdf-utils.ts        # Safe wrappers for mupdf PDFObject API

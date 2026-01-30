@@ -10,8 +10,8 @@ export const PROFILE_NAMES = [
 export type ProfileName = (typeof PROFILE_NAMES)[number];
 
 export const PROFILES: Record<ProfileName, CheckOptions> = {
-  standard: { minDpi: 300, colorSpace: "cmyk", bleedMm: 3 },
-  magazine: { minDpi: 300, colorSpace: "cmyk", bleedMm: 5 },
-  newspaper: { minDpi: 150, colorSpace: "any", bleedMm: 0 },
-  "large-format": { minDpi: 150, colorSpace: "cmyk", bleedMm: 5 },
+  standard: { minDpi: 300, colorSpace: "cmyk", bleedMm: 3, maxTac: 300 },
+  magazine: { minDpi: 300, colorSpace: "cmyk", bleedMm: 5, maxTac: 300 },
+  newspaper: { minDpi: 150, colorSpace: "any", bleedMm: 0, maxTac: 240 },
+  "large-format": { minDpi: 150, colorSpace: "cmyk", bleedMm: 5, maxTac: 300 },
 };

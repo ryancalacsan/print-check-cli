@@ -267,6 +267,55 @@ export async function createPdfxCompliantPdf(): Promise<string> {
   return writePdf(doc, "pdfx-compliant");
 }
 
+// ---------------------------------------------------------------------------
+// TAC (Total Ink Coverage) fixtures — use raw CMYK content stream operators
+// ---------------------------------------------------------------------------
+
+/**
+ * Helper: create a PDF with a CMYK rectangle via raw content stream operators.
+ * `k` sets CMYK fill color (values 0–1), `re` draws a rect, `f` fills it.
+ */
+async function createCmykRectPdf(
+  name: string,
+  c: number,
+  m: number,
+  y: number,
+  k: number,
+): Promise<string> {
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([612, 792]);
+  // Inject raw content stream with CMYK fill
+  const stream = `${c} ${m} ${y} ${k} k\n50 600 200 100 re\nf`;
+  const contentStream = doc.context.flateStream(stream);
+  const ref = doc.context.register(contentStream);
+  // Append our content stream to the page's Contents array
+  const pageDict = page.node;
+  const existingContents = pageDict.get(PDFName.of("Contents"));
+  if (existingContents) {
+    const arr = doc.context.obj([existingContents, ref]);
+    pageDict.set(PDFName.of("Contents"), arr);
+  } else {
+    pageDict.set(PDFName.of("Contents"), ref);
+  }
+  return writePdf(doc, name);
+}
+
+/** CMYK content with safe TAC (~250%): C=0.6 M=0.6 Y=0.6 K=0.3 = 210% (well under limit) */
+export async function createCmykPdf(): Promise<string> {
+  // Actually target ~250%: C=0.7 M=0.6 Y=0.6 K=0.6 = 250%
+  return createCmykRectPdf("cmyk-safe-tac", 0.7, 0.6, 0.6, 0.6);
+}
+
+/** Rich black with high TAC: C=0.80 M=0.70 Y=0.70 K=0.90 = 310% */
+export async function createHighTacPdf(): Promise<string> {
+  return createCmykRectPdf("cmyk-high-tac", 0.80, 0.70, 0.70, 0.90);
+}
+
+/** Near threshold TAC: C=0.70 M=0.65 Y=0.60 K=0.90 = 285% */
+export async function createNearThresholdTacPdf(): Promise<string> {
+  return createCmykRectPdf("cmyk-near-tac", 0.70, 0.65, 0.60, 0.90);
+}
+
 /** Letter page with a 300×300px image drawn at 72×72pt (1in×1in).
  *  CTM-based DPI = 300. Old page-fill method would calculate ~39 DPI. */
 export async function createScaledImagePdf(): Promise<string> {

@@ -19,6 +19,7 @@ export interface CheckOptions {
   minDpi: number;
   colorSpace: "cmyk" | "any";
   bleedMm: number;
+  maxTac: number;
 }
 
 export type CheckFn = (
