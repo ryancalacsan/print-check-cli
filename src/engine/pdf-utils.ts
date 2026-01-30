@@ -7,10 +7,7 @@ export function safeResolve(obj: PDFObject | undefined): PDFObject | undefined {
 }
 
 /** Safely get a key from a PDFObject, returning undefined if null */
-export function safeGet(
-  obj: PDFObject | undefined,
-  key: string,
-): PDFObject | undefined {
+export function safeGet(obj: PDFObject | undefined, key: string): PDFObject | undefined {
   if (!obj || obj.isNull()) return undefined;
   const val = obj.get(key);
   if (!val || val.isNull()) return undefined;
@@ -18,10 +15,7 @@ export function safeGet(
 }
 
 /** Safely get and resolve a key from a PDFObject */
-export function safeGetResolved(
-  obj: PDFObject | undefined,
-  key: string,
-): PDFObject | undefined {
+export function safeGetResolved(obj: PDFObject | undefined, key: string): PDFObject | undefined {
   const val = safeGet(obj, key);
   return val ? safeResolve(val) : undefined;
 }

@@ -6,16 +6,16 @@ A Node.js + TypeScript CLI tool that validates print-ready PDF files. Runs eight
 
 ## Checks
 
-| Check | What it validates |
-|---|---|
-| **Bleed & Trim** | TrimBox/BleedBox presence and minimum bleed dimensions |
-| **Fonts** | Font embedding status (embedded, subset, or missing) |
-| **Color Space** | CMYK compliance, RGB detection, spot color reporting |
-| **Resolution** | Raster image DPI against a configurable minimum |
-| **PDF/X Compliance** | PDF/X standard detection (OutputIntents, version, output condition) — info only |
-| **Total Ink Coverage** | Maximum ink density (C+M+Y+K %) against configurable limit |
-| **Transparency** | Detects unflattened transparency (groups, soft masks, blend modes) |
-| **Page Size** | Verifies consistent page dimensions and optional expected size match |
+| Check                  | What it validates                                                               |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| **Bleed & Trim**       | TrimBox/BleedBox presence and minimum bleed dimensions                          |
+| **Fonts**              | Font embedding status (embedded, subset, or missing)                            |
+| **Color Space**        | CMYK compliance, RGB detection, spot color reporting                            |
+| **Resolution**         | Raster image DPI against a configurable minimum                                 |
+| **PDF/X Compliance**   | PDF/X standard detection (OutputIntents, version, output condition) — info only |
+| **Total Ink Coverage** | Maximum ink density (C+M+Y+K %) against configurable limit                      |
+| **Transparency**       | Detects unflattened transparency (groups, soft masks, blend modes)              |
+| **Page Size**          | Verifies consistent page dimensions and optional expected size match            |
 
 ## Usage
 
@@ -75,12 +75,12 @@ print-check *.pdf --format json
 
 Built-in profiles provide preset thresholds for common print scenarios. Explicit CLI flags override profile defaults.
 
-| Profile | minDpi | colorSpace | bleedMm | maxTac | Use case |
-|---------|--------|------------|---------|--------|----------|
-| `standard` | 300 | cmyk | 3 | 300 | General commercial print (default) |
-| `magazine` | 300 | cmyk | 5 | 300 | Magazine / perfect-bound |
-| `newspaper` | 150 | any | 0 | 240 | Newsprint / low-fidelity |
-| `large-format` | 150 | cmyk | 5 | 300 | Banners, posters, signage |
+| Profile        | minDpi | colorSpace | bleedMm | maxTac | Use case                           |
+| -------------- | ------ | ---------- | ------- | ------ | ---------------------------------- |
+| `standard`     | 300    | cmyk       | 3       | 300    | General commercial print (default) |
+| `magazine`     | 300    | cmyk       | 5       | 300    | Magazine / perfect-bound           |
+| `newspaper`    | 150    | any        | 0       | 240    | Newsprint / low-fidelity           |
+| `large-format` | 150    | cmyk       | 5       | 300    | Banners, posters, signage          |
 
 ### Exit codes
 
@@ -102,11 +102,11 @@ print-check flyer.pdf --severity transparency:off
 print-check flyer.pdf --severity fonts:warn,transparency:off
 ```
 
-| Level | Behavior |
-|-------|----------|
-| `fail` | Default — no change to check result |
+| Level  | Behavior                                       |
+| ------ | ---------------------------------------------- |
+| `fail` | Default — no change to check result            |
 | `warn` | Downgrade any `fail` result to `warn` (exit 0) |
-| `off` | Skip the check entirely |
+| `off`  | Skip the check entirely                        |
 
 Available check names: `bleed`, `fonts`, `colorspace`, `resolution`, `pdfx`, `tac`, `transparency`, `pagesize`.
 
@@ -115,6 +115,7 @@ Available check names: `bleed`, `fonts`, `colorspace`, `resolution`, `pdfx`, `ta
 Create a config file to set default options for your project:
 
 ### `.printcheckrc` / `.printcheckrc.json`
+
 ```json
 {
   "minDpi": 300,
@@ -131,6 +132,7 @@ Create a config file to set default options for your project:
 ```
 
 ### `printcheck.config.js`
+
 ```js
 export default {
   minDpi: 150,
@@ -145,15 +147,15 @@ CLI flags always override config file values.
 
 ## Tech Stack
 
-| Package | Purpose |
-|---|---|
-| [mupdf](https://www.npmjs.com/package/mupdf) (mupdf.js) | PDF engine — WASM-powered, deep PDF object traversal |
-| [pdf-lib](https://www.npmjs.com/package/pdf-lib) | Supplemental — reading page boxes (TrimBox, BleedBox, etc.) |
-| [commander](https://www.npmjs.com/package/commander) | CLI framework |
-| [picocolors](https://www.npmjs.com/package/picocolors) | Terminal colors |
-| [zod](https://www.npmjs.com/package/zod) | CLI option validation |
-| [tsup](https://www.npmjs.com/package/tsup) | TypeScript build |
-| [vitest](https://www.npmjs.com/package/vitest) | Testing |
+| Package                                                 | Purpose                                                     |
+| ------------------------------------------------------- | ----------------------------------------------------------- |
+| [mupdf](https://www.npmjs.com/package/mupdf) (mupdf.js) | PDF engine — WASM-powered, deep PDF object traversal        |
+| [pdf-lib](https://www.npmjs.com/package/pdf-lib)        | Supplemental — reading page boxes (TrimBox, BleedBox, etc.) |
+| [commander](https://www.npmjs.com/package/commander)    | CLI framework                                               |
+| [picocolors](https://www.npmjs.com/package/picocolors)  | Terminal colors                                             |
+| [zod](https://www.npmjs.com/package/zod)                | CLI option validation                                       |
+| [tsup](https://www.npmjs.com/package/tsup)              | TypeScript build                                            |
+| [vitest](https://www.npmjs.com/package/vitest)          | Testing                                                     |
 
 ## Project Structure
 
@@ -191,4 +193,3 @@ npm test              # Run vitest
 ## Known Limitations (MVP)
 
 - **mupdf PDFObject nulls** — mupdf.js returns PDFObject wrappers with `.isNull() === true` rather than JavaScript `null`. All mupdf access goes through `src/engine/pdf-utils.ts` safe wrappers to handle this.
-

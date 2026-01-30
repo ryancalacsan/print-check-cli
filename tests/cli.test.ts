@@ -90,14 +90,30 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
 
   it("should respect --min-dpi option", async () => {
     // With resolution-only check and default 300 DPI on a text-only PDF, should pass
-    const result = await runCli([basicPdf, "--checks", "resolution", "--min-dpi", "1", "--format", "json"]);
+    const result = await runCli([
+      basicPdf,
+      "--checks",
+      "resolution",
+      "--min-dpi",
+      "1",
+      "--format",
+      "json",
+    ]);
     const json = JSON.parse(result.stdout);
     expect(json.results[0].check).toBe("Resolution");
     expect(json.results[0].status).toBe("pass");
   });
 
   it("--profile magazine should apply bleed=5", async () => {
-    const result = await runCli([basicPdf, "--profile", "magazine", "--checks", "bleed", "--format", "json"]);
+    const result = await runCli([
+      basicPdf,
+      "--profile",
+      "magazine",
+      "--checks",
+      "bleed",
+      "--format",
+      "json",
+    ]);
     const json = JSON.parse(result.stdout);
     // magazine profile requires 5mm bleed; basicPdf lacks sufficient bleed
     expect(json.results[0].check).toBe("Bleed & Trim");
@@ -105,7 +121,15 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
   });
 
   it("--profile newspaper should skip colorspace enforcement", async () => {
-    const result = await runCli([basicPdf, "--profile", "newspaper", "--checks", "colorspace", "--format", "json"]);
+    const result = await runCli([
+      basicPdf,
+      "--profile",
+      "newspaper",
+      "--checks",
+      "colorspace",
+      "--format",
+      "json",
+    ]);
     const json = JSON.parse(result.stdout);
     // newspaper profile uses colorSpace "any" so no enforcement → pass
     expect(json.results[0].check).toBe("Color Space");
@@ -116,10 +140,14 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
     // newspaper defaults to minDpi 150; override with 300
     const result = await runCli([
       basicPdf,
-      "--profile", "newspaper",
-      "--min-dpi", "300",
-      "--checks", "resolution",
-      "--format", "json",
+      "--profile",
+      "newspaper",
+      "--min-dpi",
+      "300",
+      "--checks",
+      "resolution",
+      "--format",
+      "json",
     ]);
     const json = JSON.parse(result.stdout);
     expect(json.results[0].check).toBe("Resolution");
@@ -161,7 +189,12 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
     });
 
     it("should report error for missing file and still check valid files", async () => {
-      const result = await runCli(["/tmp/does-not-exist-xyz.pdf", basicPdf, "--checks", "resolution"]);
+      const result = await runCli([
+        "/tmp/does-not-exist-xyz.pdf",
+        basicPdf,
+        "--checks",
+        "resolution",
+      ]);
       expect(result.stderr).toMatch(/not found/i);
       expect(result.stdout).toContain("print-check results:");
     });
@@ -171,9 +204,12 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
     it("--severity fonts:warn should downgrade fail to warn and exit 0", async () => {
       const result = await runCli([
         basicPdf,
-        "--checks", "fonts",
-        "--severity", "fonts:warn",
-        "--format", "json",
+        "--checks",
+        "fonts",
+        "--severity",
+        "fonts:warn",
+        "--format",
+        "json",
       ]);
       const json = JSON.parse(result.stdout);
       expect(json.results[0].status).toBe("warn");
@@ -181,11 +217,7 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
     });
 
     it("--severity transparency:off should skip the check", async () => {
-      const result = await runCli([
-        basicPdf,
-        "--severity", "transparency:off",
-        "--format", "json",
-      ]);
+      const result = await runCli([basicPdf, "--severity", "transparency:off", "--format", "json"]);
       const json = JSON.parse(result.stdout);
       expect(json.results).toHaveLength(7);
       const checkNames = json.results.map((r: { check: string }) => r.check);
@@ -195,8 +227,10 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
     it("should support multiple comma-separated overrides", async () => {
       const result = await runCli([
         basicPdf,
-        "--severity", "fonts:warn,transparency:off",
-        "--format", "json",
+        "--severity",
+        "fonts:warn,transparency:off",
+        "--format",
+        "json",
       ]);
       const json = JSON.parse(result.stdout);
       expect(json.results).toHaveLength(7);
@@ -210,10 +244,9 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
         path.join(tmpDir, ".printcheckrc"),
         JSON.stringify({ severity: { fonts: "warn" } }),
       );
-      const result = await runCli(
-        [basicPdf, "--checks", "fonts", "--format", "json"],
-        { cwd: tmpDir },
-      );
+      const result = await runCli([basicPdf, "--checks", "fonts", "--format", "json"], {
+        cwd: tmpDir,
+      });
       expect(result.stderr).not.toMatch(/error/i);
       const json = JSON.parse(result.stdout);
       expect(json.results[0].status).toBe("warn");
@@ -228,10 +261,9 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
         JSON.stringify({ severity: { fonts: "off", transparency: "off" } }),
       );
       // CLI overrides fonts back to warn, transparency stays off from config
-      const result = await runCli(
-        [basicPdf, "--severity", "fonts:warn", "--format", "json"],
-        { cwd: tmpDir },
-      );
+      const result = await runCli([basicPdf, "--severity", "fonts:warn", "--format", "json"], {
+        cwd: tmpDir,
+      });
       const json = JSON.parse(result.stdout);
       const checkNames = json.results.map((r: { check: string }) => r.check);
       expect(checkNames).not.toContain("Transparency");

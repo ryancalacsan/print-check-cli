@@ -60,8 +60,7 @@ export const checkPageSize: CheckFn = async (engines, options) => {
     const sizeStr = `${fmtMm(wMm)} × ${fmtMm(hMm)} mm`;
 
     if (expectedW !== undefined && expectedH !== undefined) {
-      const matchesExpected =
-        withinTolerance(wMm, expectedW) && withinTolerance(hMm, expectedH);
+      const matchesExpected = withinTolerance(wMm, expectedW) && withinTolerance(hMm, expectedH);
 
       if (!matchesExpected) {
         details.push({
@@ -80,8 +79,7 @@ export const checkPageSize: CheckFn = async (engines, options) => {
     } else {
       // Consistency check against page 1
       const ref = pageDims[0];
-      const consistent =
-        withinTolerance(wMm, ref.wMm) && withinTolerance(hMm, ref.hMm);
+      const consistent = withinTolerance(wMm, ref.wMm) && withinTolerance(hMm, ref.hMm);
 
       if (!consistent) {
         details.push({

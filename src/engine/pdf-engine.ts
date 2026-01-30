@@ -10,10 +10,7 @@ export interface PdfEngines {
 export async function loadPdf(filePath: string): Promise<PdfEngines> {
   const buffer = fs.readFileSync(filePath);
 
-  const mupdfDoc = mupdf.PDFDocument.openDocument(
-    buffer,
-    "application/pdf",
-  ) as mupdf.PDFDocument;
+  const mupdfDoc = mupdf.PDFDocument.openDocument(buffer, "application/pdf") as mupdf.PDFDocument;
 
   const pdfLibDoc = await PDFDocument.load(buffer, {
     ignoreEncryption: true,

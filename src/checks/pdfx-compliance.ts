@@ -1,5 +1,11 @@
-import type { CheckFn, CheckResult, CheckDetail } from "../types.js";
-import { safeGet, safeGetResolved, safeResolve, safeName, safeString } from "../engine/pdf-utils.js";
+import type { CheckFn, CheckDetail } from "../types.js";
+import {
+  safeGet,
+  safeGetResolved,
+  safeResolve,
+  safeName,
+  safeString,
+} from "../engine/pdf-utils.js";
 
 export const checkPdfxCompliance: CheckFn = async (engines, _options) => {
   const details: CheckDetail[] = [];

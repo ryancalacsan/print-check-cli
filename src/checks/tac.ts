@@ -21,13 +21,9 @@ export const checkTac: CheckFn = async (engines, options) => {
       if (tac > pageMaxTac) pageMaxTac = tac;
     }
 
-    function handleVectorColor(
-      colorspace: mupdf.ColorSpace,
-      color: number[],
-    ) {
+    function handleVectorColor(colorspace: mupdf.ColorSpace, color: number[]) {
       if (!colorspace.isCMYK()) return;
-      const tac =
-        (color[0] + color[1] + color[2] + color[3]) * 100;
+      const tac = (color[0] + color[1] + color[2] + color[3]) * 100;
       recordTac(tac);
     }
 
@@ -149,7 +145,7 @@ export const checkTac: CheckFn = async (engines, options) => {
       ? `All content within TAC limit (${maxTac}%)`
       : globalMaxTac > maxTac
         ? `Max TAC: ${tacRounded}% on page ${globalMaxPage} (limit: ${maxTac}%)`
-        : `All content within TAC limit (${maxTac}%)`
+        : `All content within TAC limit (${maxTac}%)`;
 
   return {
     check: "Total Ink Coverage",

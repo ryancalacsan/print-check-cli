@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts, PDFName, PDFDict, PDFString, PDFArray } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, PDFName, PDFDict } from "pdf-lib";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
@@ -308,12 +308,12 @@ export async function createCmykPdf(): Promise<string> {
 
 /** Rich black with high TAC: C=0.80 M=0.70 Y=0.70 K=0.90 = 310% */
 export async function createHighTacPdf(): Promise<string> {
-  return createCmykRectPdf("cmyk-high-tac", 0.80, 0.70, 0.70, 0.90);
+  return createCmykRectPdf("cmyk-high-tac", 0.8, 0.7, 0.7, 0.9);
 }
 
 /** Near threshold TAC: C=0.70 M=0.65 Y=0.60 K=0.90 = 285% */
 export async function createNearThresholdTacPdf(): Promise<string> {
-  return createCmykRectPdf("cmyk-near-tac", 0.70, 0.65, 0.60, 0.90);
+  return createCmykRectPdf("cmyk-near-tac", 0.7, 0.65, 0.6, 0.9);
 }
 
 /** Single page with a semi-transparent rectangle — exercises transparency groups */

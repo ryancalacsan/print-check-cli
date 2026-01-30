@@ -13,11 +13,7 @@ const STATUS_COLOR: Record<string, (s: string) => string> = {
   fail: pc.red,
 };
 
-export function printReport(
-  fileName: string,
-  results: CheckResult[],
-  verbose: boolean,
-): void {
+export function printReport(fileName: string, results: CheckResult[], verbose: boolean): void {
   console.log();
   console.log(` ${pc.bold("print-check results:")} ${fileName}`);
   console.log(pc.dim("─".repeat(45)));

@@ -1,9 +1,6 @@
 import type { CheckResult, JsonReport } from "../types.js";
 
-export function buildJsonReport(
-  fileName: string,
-  results: CheckResult[],
-): JsonReport {
+export function buildJsonReport(fileName: string, results: CheckResult[]): JsonReport {
   return {
     file: fileName,
     results,

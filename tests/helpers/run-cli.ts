@@ -7,10 +7,7 @@ export interface CliResult {
   exitCode: number;
 }
 
-const CLI_ENTRY = path.resolve(
-  import.meta.dirname,
-  "../../src/index.ts",
-);
+const CLI_ENTRY = path.resolve(import.meta.dirname, "../../src/index.ts");
 
 export interface RunCliOptions {
   cwd?: string;

@@ -25,10 +25,7 @@ export interface CheckOptions {
   pageSize?: string;
 }
 
-export type CheckFn = (
-  engines: PdfEngines,
-  options: CheckOptions,
-) => Promise<CheckResult>;
+export type CheckFn = (engines: PdfEngines, options: CheckOptions) => Promise<CheckResult>;
 
 export type OutputFormat = "text" | "json";
 

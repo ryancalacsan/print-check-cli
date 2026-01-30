@@ -83,11 +83,7 @@ export const checkTransparency: CheckFn = async (engines) => {
       ) {
         recordAlpha(alpha);
       },
-      fillImage(
-        _image: mupdf.Image,
-        _ctm: mupdf.Matrix,
-        alpha: number,
-      ) {
+      fillImage(_image: mupdf.Image, _ctm: mupdf.Matrix, alpha: number) {
         recordAlpha(alpha);
       },
       beginGroup(
@@ -138,8 +134,7 @@ export const checkTransparency: CheckFn = async (engines) => {
     }
   }
 
-  const status: CheckResult["status"] =
-    pagesWithTransparency.length > 0 ? "warn" : "pass";
+  const status: CheckResult["status"] = pagesWithTransparency.length > 0 ? "warn" : "pass";
 
   const summary =
     pagesWithTransparency.length > 0

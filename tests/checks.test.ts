@@ -222,7 +222,9 @@ describe("Color Space check", () => {
     const result = await checkColorSpace(rgbTextEngines, defaultOptions);
     expect(result.check).toBe("Color Space");
     expect(result.status).toBe("fail");
-    expect(result.details.some((d) => d.message.includes("RGB") && d.message.includes("text"))).toBe(true);
+    expect(
+      result.details.some((d) => d.message.includes("RGB") && d.message.includes("text")),
+    ).toBe(true);
   });
 
   it("should handle OutputIntents without crashing", async () => {

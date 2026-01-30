@@ -1,11 +1,6 @@
 import type { CheckOptions } from "./types.js";
 
-export const PROFILE_NAMES = [
-  "standard",
-  "magazine",
-  "newspaper",
-  "large-format",
-] as const;
+export const PROFILE_NAMES = ["standard", "magazine", "newspaper", "large-format"] as const;
 
 export type ProfileName = (typeof PROFILE_NAMES)[number];
 

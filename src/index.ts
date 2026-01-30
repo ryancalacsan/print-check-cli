@@ -66,12 +66,17 @@ const OptionsSchema = z.object({
   checks: z
     .string()
     .default("all")
-    .transform((val) => (val === "all" ? Object.keys(ALL_CHECKS) : val.split(",").map((s) => s.trim()))),
+    .transform((val) =>
+      val === "all" ? Object.keys(ALL_CHECKS) : val.split(",").map((s) => s.trim()),
+    ),
   verbose: z.boolean().default(false),
   format: z.enum(["text", "json"]).default("text"),
   profile: z.enum(PROFILE_NAMES).optional(),
   severity: z
-    .union([z.string().transform(parseSeverityString), z.record(z.string(), z.enum(["fail", "warn", "off"]))])
+    .union([
+      z.string().transform(parseSeverityString),
+      z.record(z.string(), z.enum(["fail", "warn", "off"])),
+    ])
     .default({}),
 });
 
@@ -101,9 +106,8 @@ program
     }
 
     const configSeverity = config?.options?.severity || {};
-    const cliSeverity = typeof stripped.severity === "string"
-      ? parseSeverityString(stripped.severity)
-      : {};
+    const cliSeverity =
+      typeof stripped.severity === "string" ? parseSeverityString(stripped.severity) : {};
     const mergedSeverity = { ...configSeverity, ...cliSeverity };
 
     const merged = {

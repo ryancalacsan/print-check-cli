@@ -22,11 +22,7 @@ export type ConfigFileResult = {
   filePath: string;
 };
 
-const CONFIG_FILES = [
-  ".printcheckrc",
-  ".printcheckrc.json",
-  "printcheck.config.js",
-] as const;
+const CONFIG_FILES = [".printcheckrc", ".printcheckrc.json", "printcheck.config.js"] as const;
 
 function findConfigFile(startDir: string): string | null {
   let dir = path.resolve(startDir);

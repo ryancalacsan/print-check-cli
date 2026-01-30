@@ -15,11 +15,7 @@ interface FontInfo {
   page: number;
 }
 
-function collectFonts(
-  fontDict: PDFObject,
-  pageNum: number,
-  seen: Set<string>,
-): FontInfo[] {
+function collectFonts(fontDict: PDFObject, pageNum: number, seen: Set<string>): FontInfo[] {
   const fonts: FontInfo[] = [];
 
   safeForEach(fontDict, (value: PDFObject, key: string) => {
@@ -40,8 +36,7 @@ function collectFonts(
         for (let i = 0; i < descendants.length; i++) {
           const cidFont = safeResolve(descendants.get(i));
           if (!cidFont) continue;
-          const cidName =
-            safeName(safeGet(cidFont, "BaseFont")) ?? baseFontName;
+          const cidName = safeName(safeGet(cidFont, "BaseFont")) ?? baseFontName;
           const descriptor = safeGetResolved(cidFont, "FontDescriptor");
           const embedded = hasEmbeddedFile(descriptor);
           const subset = /^[A-Z]{6}\+/.test(cidName);

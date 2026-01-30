@@ -54,10 +54,8 @@ export const checkBleedTrim: CheckFn = async (engines, options) => {
 
     const bleedLeft = (trimBox.x - refBox.x) * PT_TO_MM;
     const bleedBottom = (trimBox.y - refBox.y) * PT_TO_MM;
-    const bleedRight =
-      (refBox.x + refBox.width - (trimBox.x + trimBox.width)) * PT_TO_MM;
-    const bleedTop =
-      (refBox.y + refBox.height - (trimBox.y + trimBox.height)) * PT_TO_MM;
+    const bleedRight = (refBox.x + refBox.width - (trimBox.x + trimBox.width)) * PT_TO_MM;
+    const bleedTop = (refBox.y + refBox.height - (trimBox.y + trimBox.height)) * PT_TO_MM;
 
     const minBleed = Math.min(bleedLeft, bleedBottom, bleedRight, bleedTop);
     const requiredMm = options.bleedMm;
@@ -65,11 +63,9 @@ export const checkBleedTrim: CheckFn = async (engines, options) => {
     if (minBleed < requiredMm) {
       const sides: string[] = [];
       if (bleedLeft < requiredMm) sides.push(`left: ${bleedLeft.toFixed(1)}mm`);
-      if (bleedRight < requiredMm)
-        sides.push(`right: ${bleedRight.toFixed(1)}mm`);
+      if (bleedRight < requiredMm) sides.push(`right: ${bleedRight.toFixed(1)}mm`);
       if (bleedTop < requiredMm) sides.push(`top: ${bleedTop.toFixed(1)}mm`);
-      if (bleedBottom < requiredMm)
-        sides.push(`bottom: ${bleedBottom.toFixed(1)}mm`);
+      if (bleedBottom < requiredMm) sides.push(`bottom: ${bleedBottom.toFixed(1)}mm`);
 
       details.push({
         page: pageNum,
