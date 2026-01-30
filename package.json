@@ -1,5 +1,5 @@
 {
-  "name": "print-check-cli",
+  "name": "print-check",
   "version": "1.0.0",
   "type": "module",
   "bin": {
