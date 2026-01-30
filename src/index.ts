@@ -11,6 +11,7 @@ import {
 import { loadPdf } from "./engine/pdf-engine.js";
 import { printReport } from "./reporter/console.js";
 import { printJsonReport } from "./reporter/json.js";
+import { PROFILES, PROFILE_NAMES } from "./profiles.js";
 import type { CheckFn, CheckOptions } from "./types.js";
 
 const ALL_CHECKS: Record<string, CheckFn> = {
@@ -21,15 +22,16 @@ const ALL_CHECKS: Record<string, CheckFn> = {
 };
 
 const OptionsSchema = z.object({
-  minDpi: z.coerce.number().int().positive().default(300),
-  colorSpace: z.enum(["cmyk", "any"]).default("cmyk"),
-  bleed: z.coerce.number().nonnegative().default(3),
+  minDpi: z.coerce.number().int().positive().optional(),
+  colorSpace: z.enum(["cmyk", "any"]).optional(),
+  bleed: z.coerce.number().nonnegative().optional(),
   checks: z
     .string()
     .default("all")
     .transform((val) => (val === "all" ? Object.keys(ALL_CHECKS) : val.split(",").map((s) => s.trim()))),
   verbose: z.boolean().default(false),
   format: z.enum(["text", "json"]).default("text"),
+  profile: z.enum(PROFILE_NAMES).optional(),
 });
 
 const program = new Command();
@@ -39,12 +41,13 @@ program
   .description("Validate print-ready PDF files")
   .version("1.0.0")
   .argument("<file>", "PDF file to check")
-  .option("--min-dpi <number>", "Minimum acceptable DPI", "300")
-  .option("--color-space <mode>", "Expected color space: cmyk | any", "cmyk")
-  .option("--bleed <mm>", "Required bleed in mm", "3")
+  .option("--min-dpi <number>", "Minimum acceptable DPI")
+  .option("--color-space <mode>", "Expected color space: cmyk | any")
+  .option("--bleed <mm>", "Required bleed in mm")
   .option("--checks <list>", "Comma-separated checks to run", "all")
   .option("--verbose", "Show detailed per-page results", false)
   .option("--format <type>", "Output format: text | json", "text")
+  .option("--profile <name>", "Print profile: standard | magazine | newspaper | large-format")
   .action(async (file: string, rawOpts: Record<string, unknown>) => {
     const parsed = OptionsSchema.safeParse(rawOpts);
     if (!parsed.success) {
@@ -60,10 +63,11 @@ program
       process.exit(1);
     }
 
+    const base = opts.profile ? PROFILES[opts.profile] : PROFILES.standard;
     const checkOptions: CheckOptions = {
-      minDpi: opts.minDpi,
-      colorSpace: opts.colorSpace,
-      bleedMm: opts.bleed,
+      minDpi: opts.minDpi !== undefined ? opts.minDpi : base.minDpi,
+      colorSpace: opts.colorSpace !== undefined ? opts.colorSpace : base.colorSpace,
+      bleedMm: opts.bleed !== undefined ? opts.bleed : base.bleedMm,
     };
 
     const checksToRun = opts.checks.filter((name) => {

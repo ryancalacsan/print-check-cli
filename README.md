@@ -21,6 +21,7 @@ Options:
   --color-space <mode>     Expected color space: cmyk | any (default: cmyk)
   --bleed <mm>             Required bleed in mm (default: 3)
   --checks <list>          Comma-separated checks to run (default: all)
+  --profile <name>         Print profile: standard | magazine | newspaper | large-format
   --verbose                Show detailed per-page results
   --format <type>          Output format: text | json (default: text)
   -V, --version            Output version
@@ -44,7 +45,24 @@ print-check flyer.pdf --color-space any
 
 # JSON output for CI pipelines
 print-check flyer.pdf --format json
+
+# Use a built-in profile
+print-check flyer.pdf --profile magazine
+
+# Profile with explicit override
+print-check flyer.pdf --profile newspaper --min-dpi 300
 ```
+
+### Profiles
+
+Built-in profiles provide preset thresholds for common print scenarios. Explicit CLI flags override profile defaults.
+
+| Profile | minDpi | colorSpace | bleedMm | Use case |
+|---------|--------|------------|---------|----------|
+| `standard` | 300 | cmyk | 3 | General commercial print (default) |
+| `magazine` | 300 | cmyk | 5 | Magazine / perfect-bound |
+| `newspaper` | 150 | any | 0 | Newsprint / low-fidelity |
+| `large-format` | 150 | cmyk | 5 | Banners, posters, signage |
 
 ### Exit codes
 
@@ -103,6 +121,6 @@ npm test              # Run vitest
 - [ ] CTM-based DPI calculation for accurate per-image resolution
 - [ ] Content stream operator parsing for inline color space usage
 - [x] JSON/CI-friendly output format (`--format json`)
-- [ ] Configurable profiles (e.g., `--profile magazine` with preset thresholds)
+- [x] Configurable profiles (`--profile magazine` with preset thresholds)
 - [ ] PDF/X standard compliance detection
 - [ ] Batch file processing (glob patterns)

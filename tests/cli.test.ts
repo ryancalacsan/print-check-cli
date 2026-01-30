@@ -85,4 +85,40 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
     expect(json.results[0].check).toBe("Resolution");
     expect(json.results[0].status).toBe("pass");
   });
+
+  it("--profile magazine should apply bleed=5", async () => {
+    const result = await runCli([basicPdf, "--profile", "magazine", "--checks", "bleed", "--format", "json"]);
+    const json = JSON.parse(result.stdout);
+    // magazine profile requires 5mm bleed; basicPdf lacks sufficient bleed
+    expect(json.results[0].check).toBe("Bleed & Trim");
+    expect(["warn", "fail"]).toContain(json.results[0].status);
+  });
+
+  it("--profile newspaper should skip colorspace enforcement", async () => {
+    const result = await runCli([basicPdf, "--profile", "newspaper", "--checks", "colorspace", "--format", "json"]);
+    const json = JSON.parse(result.stdout);
+    // newspaper profile uses colorSpace "any" so no enforcement → pass
+    expect(json.results[0].check).toBe("Color Space");
+    expect(json.results[0].status).toBe("pass");
+  });
+
+  it("--profile with explicit override uses the override value", async () => {
+    // newspaper defaults to minDpi 150; override with 300
+    const result = await runCli([
+      basicPdf,
+      "--profile", "newspaper",
+      "--min-dpi", "300",
+      "--checks", "resolution",
+      "--format", "json",
+    ]);
+    const json = JSON.parse(result.stdout);
+    expect(json.results[0].check).toBe("Resolution");
+    // text-only PDF passes regardless, but we verify the CLI accepts the combo
+    expect(json.results[0].status).toBe("pass");
+  });
+
+  it("should exit non-zero for unknown profile name", async () => {
+    const result = await runCli([basicPdf, "--profile", "bogus"]);
+    expect(result.exitCode).not.toBe(0);
+  });
 });
