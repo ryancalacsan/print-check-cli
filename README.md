@@ -185,11 +185,16 @@ src/
 ## Development
 
 ```bash
-npm install           # Install dependencies
+npm install           # Install dependencies (also sets up pre-commit hooks)
 npm run dev -- <file> # Run via tsx (no build needed)
 npm run build         # Build to dist/
 npm test              # Run vitest
+npm run test:coverage # Run with coverage report
+npm run lint          # ESLint
+npm run format:check  # Prettier check
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for full development guidelines.
 
 ## Known Limitations (MVP)
 

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- CONTRIBUTING.md with development setup, coding standards, and PR guidelines
+- Pre-commit hooks via husky and lint-staged (auto-lint and format on commit)
+- Node 20 and 22 version matrix in CI
+- Codecov integration with coverage badge
+- Test coverage improvements: config tests, reporter tests, stroke-based PDF fixtures
+- Coverage thresholds enforced in CI (80% lines, 67% branches)
+
 ## [1.0.0] - 2026-01-30
 
 ### Added

@@ -41,7 +41,9 @@ This project uses ESLint and Prettier to enforce consistent code style. Both run
 - **Linting:** ESLint with TypeScript recommended rules
 - **Unused parameters:** Prefix with underscore (e.g., `_unusedParam`)
 
-Before committing, make sure your code passes:
+A pre-commit hook (via [husky](https://typicode.github.io/husky/) and [lint-staged](https://github.com/lint-staged/lint-staged)) runs automatically on `git commit` to lint and format staged files. If the hook fails, fix the issues before committing.
+
+You can also run checks manually:
 
 ```bash
 npm run lint
