@@ -1,10 +1,10 @@
 import type { CheckResult, JsonReport } from "../types.js";
 
-export function printJsonReport(
+export function buildJsonReport(
   fileName: string,
   results: CheckResult[],
-): void {
-  const report: JsonReport = {
+): JsonReport {
+  return {
     file: fileName,
     results,
     summary: {
@@ -13,6 +13,4 @@ export function printJsonReport(
       failed: results.filter((r) => r.status === "fail").length,
     },
   };
-
-  console.log(JSON.stringify(report, null, 2));
 }

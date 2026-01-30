@@ -14,7 +14,7 @@ A Node.js + TypeScript CLI tool that validates print-ready PDF files. Runs four 
 ## Usage
 
 ```
-print-check <file.pdf> [options]
+print-check <file.pdf ...> [options]
 
 Options:
   --min-dpi <number>       Minimum acceptable DPI (default: 300)
@@ -51,6 +51,15 @@ print-check flyer.pdf --profile magazine
 
 # Profile with explicit override
 print-check flyer.pdf --profile newspaper --min-dpi 300
+
+# Check multiple files at once
+print-check flyer.pdf poster.pdf brochure.pdf
+
+# Use shell globbing to check all PDFs in a directory
+print-check *.pdf
+
+# Multiple files with JSON output (outputs an array of reports)
+print-check *.pdf --format json
 ```
 
 ### Profiles
@@ -123,4 +132,4 @@ npm test              # Run vitest
 - [x] JSON/CI-friendly output format (`--format json`)
 - [x] Configurable profiles (`--profile magazine` with preset thresholds)
 - [ ] PDF/X standard compliance detection
-- [ ] Batch file processing (glob patterns)
+- [x] Batch file processing (multiple file arguments)

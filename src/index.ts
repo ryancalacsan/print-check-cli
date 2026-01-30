@@ -10,9 +10,9 @@ import {
 } from "./checks/index.js";
 import { loadPdf } from "./engine/pdf-engine.js";
 import { printReport } from "./reporter/console.js";
-import { printJsonReport } from "./reporter/json.js";
+import { buildJsonReport } from "./reporter/json.js";
 import { PROFILES, PROFILE_NAMES } from "./profiles.js";
-import type { CheckFn, CheckOptions } from "./types.js";
+import type { CheckFn, CheckOptions, JsonReport } from "./types.js";
 
 const ALL_CHECKS: Record<string, CheckFn> = {
   bleed: checkBleedTrim,
@@ -40,7 +40,7 @@ program
   .name("print-check")
   .description("Validate print-ready PDF files")
   .version("1.0.0")
-  .argument("<file>", "PDF file to check")
+  .argument("<files...>", "PDF file(s) to check")
   .option("--min-dpi <number>", "Minimum acceptable DPI")
   .option("--color-space <mode>", "Expected color space: cmyk | any")
   .option("--bleed <mm>", "Required bleed in mm")
@@ -48,7 +48,7 @@ program
   .option("--verbose", "Show detailed per-page results", false)
   .option("--format <type>", "Output format: text | json", "text")
   .option("--profile <name>", "Print profile: standard | magazine | newspaper | large-format")
-  .action(async (file: string, rawOpts: Record<string, unknown>) => {
+  .action(async (files: string[], rawOpts: Record<string, unknown>) => {
     const parsed = OptionsSchema.safeParse(rawOpts);
     if (!parsed.success) {
       console.error("Invalid options:", parsed.error.format());
@@ -56,12 +56,6 @@ program
     }
 
     const opts = parsed.data;
-    const filePath = path.resolve(file);
-
-    if (!fs.existsSync(filePath)) {
-      console.error(`File not found: ${filePath}`);
-      process.exit(1);
-    }
 
     const base = opts.profile ? PROFILES[opts.profile] : PROFILES.standard;
     const checkOptions: CheckOptions = {
@@ -83,31 +77,56 @@ program
       process.exit(1);
     }
 
-    const engines = await loadPdf(filePath);
+    const allReports: JsonReport[] = [];
+    let anyFail = false;
 
-    const results = [];
-    for (const name of checksToRun) {
-      try {
-        const result = await ALL_CHECKS[name](engines, checkOptions);
-        results.push(result);
-      } catch (err) {
-        results.push({
-          check: name,
-          status: "fail" as const,
-          summary: `Error: ${err instanceof Error ? err.message : String(err)}`,
-          details: [],
-        });
+    for (const file of files) {
+      const filePath = path.resolve(file);
+
+      if (!fs.existsSync(filePath)) {
+        console.error(`File not found: ${filePath}`);
+        anyFail = true;
+        continue;
+      }
+
+      const engines = await loadPdf(filePath);
+
+      const results = [];
+      for (const name of checksToRun) {
+        try {
+          const result = await ALL_CHECKS[name](engines, checkOptions);
+          results.push(result);
+        } catch (err) {
+          results.push({
+            check: name,
+            status: "fail" as const,
+            summary: `Error: ${err instanceof Error ? err.message : String(err)}`,
+            details: [],
+          });
+        }
+      }
+
+      if (results.some((r) => r.status === "fail")) anyFail = true;
+
+      if (opts.format === "json") {
+        allReports.push(buildJsonReport(path.basename(filePath), results));
+      } else {
+        if (files.indexOf(file) > 0) {
+          console.log();
+        }
+        printReport(path.basename(filePath), results, opts.verbose);
       }
     }
 
     if (opts.format === "json") {
-      printJsonReport(path.basename(filePath), results);
-    } else {
-      printReport(path.basename(filePath), results, opts.verbose);
+      if (allReports.length === 1) {
+        console.log(JSON.stringify(allReports[0], null, 2));
+      } else {
+        console.log(JSON.stringify(allReports, null, 2));
+      }
     }
 
-    const hasFail = results.some((r) => r.status === "fail");
-    process.exit(hasFail ? 1 : 0);
+    process.exit(anyFail ? 1 : 0);
   });
 
 program.parse();

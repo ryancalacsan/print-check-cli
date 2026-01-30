@@ -121,4 +121,39 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
     const result = await runCli([basicPdf, "--profile", "bogus"]);
     expect(result.exitCode).not.toBe(0);
   });
+
+  // Batch file processing tests
+  describe("batch file processing", () => {
+    it("should show both filenames in text mode with multiple files", async () => {
+      const result = await runCli([basicPdf, basicPdf, "--checks", "resolution"]);
+      const matches = result.stdout.match(/print-check results:/g);
+      expect(matches).toHaveLength(2);
+    });
+
+    it("should output an array of reports in JSON mode with multiple files", async () => {
+      const result = await runCli([basicPdf, basicPdf, "--format", "json"]);
+      const json = JSON.parse(result.stdout);
+      expect(Array.isArray(json)).toBe(true);
+      expect(json).toHaveLength(2);
+      expect(json[0]).toHaveProperty("file");
+      expect(json[0]).toHaveProperty("results");
+      expect(json[0]).toHaveProperty("summary");
+      expect(json[1]).toHaveProperty("file");
+    });
+
+    it("should output a single object (not array) in JSON mode with one file", async () => {
+      const result = await runCli([basicPdf, "--format", "json"]);
+      const json = JSON.parse(result.stdout);
+      expect(Array.isArray(json)).toBe(false);
+      expect(json).toHaveProperty("file");
+      expect(json).toHaveProperty("results");
+      expect(json).toHaveProperty("summary");
+    });
+
+    it("should report error for missing file and still check valid files", async () => {
+      const result = await runCli(["/tmp/does-not-exist-xyz.pdf", basicPdf, "--checks", "resolution"]);
+      expect(result.stderr).toMatch(/not found/i);
+      expect(result.stdout).toContain("print-check results:");
+    });
+  });
 });
