@@ -125,11 +125,3 @@ npm test              # Run vitest
 
 - **mupdf PDFObject nulls** — mupdf.js returns PDFObject wrappers with `.isNull() === true` rather than JavaScript `null`. All mupdf access goes through `src/engine/pdf-utils.ts` safe wrappers to handle this.
 
-## Roadmap
-
-- [x] CTM-based DPI calculation for accurate per-image resolution
-- [x] Content stream operator parsing for inline color space usage
-- [x] JSON/CI-friendly output format (`--format json`)
-- [x] Configurable profiles (`--profile magazine` with preset thresholds)
-- [x] PDF/X standard compliance detection
-- [x] Batch file processing (multiple file arguments)
