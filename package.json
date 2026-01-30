@@ -1,0 +1,36 @@
+{
+  "name": "print-check-cli",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "print-check": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "pdf",
+    "print",
+    "prepress",
+    "cli"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "CLI tool to validate print-ready PDF files",
+  "dependencies": {
+    "commander": "^14.0.2",
+    "mupdf": "^1.27.0",
+    "pdf-lib": "^1.17.1",
+    "picocolors": "^1.1.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.1.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
