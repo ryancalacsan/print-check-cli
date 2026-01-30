@@ -12,12 +12,16 @@ const CLI_ENTRY = path.resolve(
   "../../src/index.ts",
 );
 
-export function runCli(args: string[]): Promise<CliResult> {
+export interface RunCliOptions {
+  cwd?: string;
+}
+
+export function runCli(args: string[], options?: RunCliOptions): Promise<CliResult> {
   return new Promise((resolve) => {
     execFile(
       "npx",
       ["tsx", CLI_ENTRY, ...args],
-      { timeout: 25_000 },
+      { timeout: 25_000, cwd: options?.cwd },
       (error, stdout, stderr) => {
         let exitCode = 0;
         if (error) {

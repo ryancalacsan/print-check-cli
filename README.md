@@ -29,6 +29,7 @@ Options:
   --max-tac <percent>      Maximum total ink coverage % (default: 300)
   --page-size <WxH>        Expected page size in mm (e.g. 210x297)
   --checks <list>          Comma-separated checks to run (default: all)
+  --severity <overrides>   Per-check severity: check:level,... (fail|warn|off)
   --profile <name>         Print profile: standard | magazine | newspaper | large-format
   --verbose                Show detailed per-page results
   --format <type>          Output format: text | json (default: text)
@@ -86,6 +87,29 @@ Built-in profiles provide preset thresholds for common print scenarios. Explicit
 - `0` — all checks passed (or warned)
 - `1` — one or more checks failed
 
+### Severity Overrides
+
+Override the default severity for any check using `--severity`:
+
+```bash
+# Downgrade font failures to warnings (exit 0)
+print-check flyer.pdf --severity fonts:warn
+
+# Skip transparency check entirely
+print-check flyer.pdf --severity transparency:off
+
+# Multiple overrides
+print-check flyer.pdf --severity fonts:warn,transparency:off
+```
+
+| Level | Behavior |
+|-------|----------|
+| `fail` | Default — no change to check result |
+| `warn` | Downgrade any `fail` result to `warn` (exit 0) |
+| `off` | Skip the check entirely |
+
+Available check names: `bleed`, `fonts`, `colorspace`, `resolution`, `pdfx`, `tac`, `transparency`, `pagesize`.
+
 ## Configuration
 
 Create a config file to set default options for your project:
@@ -98,7 +122,11 @@ Create a config file to set default options for your project:
   "bleed": 5,
   "maxTac": 300,
   "checks": "bleed,fonts,colorspace",
-  "profile": "magazine"
+  "profile": "magazine",
+  "severity": {
+    "fonts": "warn",
+    "transparency": "off"
+  }
 }
 ```
 

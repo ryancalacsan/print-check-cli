@@ -2,6 +2,8 @@ import type { PdfEngines } from "./engine/pdf-engine.js";
 
 export type CheckStatus = "pass" | "warn" | "fail";
 
+export type SeverityOverride = "fail" | "warn" | "off";
+
 export interface CheckDetail {
   page?: number;
   message: string;

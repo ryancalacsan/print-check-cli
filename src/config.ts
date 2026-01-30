@@ -14,6 +14,7 @@ export const ConfigSchema = z.object({
   verbose: z.boolean().optional(),
   format: z.enum(["text", "json"]).optional(),
   profile: z.enum(PROFILE_NAMES).optional(),
+  severity: z.record(z.string(), z.enum(["fail", "warn", "off"])).optional(),
 });
 
 export type ConfigFileResult = {

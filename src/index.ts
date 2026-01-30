@@ -17,7 +17,34 @@ import { printReport } from "./reporter/console.js";
 import { buildJsonReport } from "./reporter/json.js";
 import { PROFILES, PROFILE_NAMES } from "./profiles.js";
 import { loadConfig } from "./config.js";
-import type { CheckFn, CheckOptions, JsonReport } from "./types.js";
+import type { CheckFn, CheckOptions, CheckResult, JsonReport, SeverityOverride } from "./types.js";
+
+function parseSeverityString(val: string): Record<string, string> {
+  if (!val.trim()) return {};
+  const result: Record<string, string> = {};
+  for (const pair of val.split(",")) {
+    const [check, level] = pair.split(":").map((s) => s.trim());
+    if (check && level) result[check] = level;
+  }
+  return result;
+}
+
+function applySeverityOverride(
+  result: CheckResult,
+  override: SeverityOverride | undefined,
+): CheckResult {
+  if (!override || override === "fail") return result;
+  if (override === "warn" && result.status === "fail") {
+    return {
+      ...result,
+      status: "warn",
+      details: result.details.map((d) =>
+        d.status === "fail" ? { ...d, status: "warn" as const } : d,
+      ),
+    };
+  }
+  return result;
+}
 
 const ALL_CHECKS: Record<string, CheckFn> = {
   bleed: checkBleedTrim,
@@ -43,6 +70,9 @@ const OptionsSchema = z.object({
   verbose: z.boolean().default(false),
   format: z.enum(["text", "json"]).default("text"),
   profile: z.enum(PROFILE_NAMES).optional(),
+  severity: z
+    .union([z.string().transform(parseSeverityString), z.record(z.string(), z.enum(["fail", "warn", "off"]))])
+    .default({}),
 });
 
 const program = new Command();
@@ -61,6 +91,7 @@ program
   .option("--verbose", "Show detailed per-page results", false)
   .option("--format <type>", "Output format: text | json", "text")
   .option("--profile <name>", "Print profile: standard | magazine | newspaper | large-format")
+  .option("--severity <overrides>", "Per-check severity: check:level,... (fail|warn|off)")
   .action(async (files: string[], rawOpts: Record<string, unknown>) => {
     const config = await loadConfig();
 
@@ -69,7 +100,17 @@ program
       if (value !== undefined) stripped[key] = value;
     }
 
-    const merged = { ...config?.options, ...stripped };
+    const configSeverity = config?.options?.severity || {};
+    const cliSeverity = typeof stripped.severity === "string"
+      ? parseSeverityString(stripped.severity)
+      : {};
+    const mergedSeverity = { ...configSeverity, ...cliSeverity };
+
+    const merged = {
+      ...config?.options,
+      ...stripped,
+      severity: Object.keys(mergedSeverity).length > 0 ? mergedSeverity : undefined,
+    };
     const parsed = OptionsSchema.safeParse(merged);
     if (!parsed.success) {
       console.error("Invalid options:", parsed.error.format());
@@ -96,6 +137,7 @@ program
         console.warn(`Unknown check: "${name}" (skipping)`);
         return false;
       }
+      if (opts.severity[name] === "off") return false;
       return true;
     });
 
@@ -121,15 +163,16 @@ program
       const results = [];
       for (const name of checksToRun) {
         try {
-          const result = await ALL_CHECKS[name](engines, checkOptions);
-          results.push(result);
+          const raw = await ALL_CHECKS[name](engines, checkOptions);
+          results.push(applySeverityOverride(raw, opts.severity[name]));
         } catch (err) {
-          results.push({
+          const raw = {
             check: name,
             status: "fail" as const,
             summary: `Error: ${err instanceof Error ? err.message : String(err)}`,
             details: [],
-          });
+          };
+          results.push(applySeverityOverride(raw, opts.severity[name]));
         }
       }
 

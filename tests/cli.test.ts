@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { runCli } from "./helpers/run-cli.js";
 import { createBasicPdf } from "./helpers/pdf-fixtures.js";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 
 let basicPdf: string;
 
@@ -161,6 +164,81 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
       const result = await runCli(["/tmp/does-not-exist-xyz.pdf", basicPdf, "--checks", "resolution"]);
       expect(result.stderr).toMatch(/not found/i);
       expect(result.stdout).toContain("print-check results:");
+    });
+  });
+
+  describe("severity overrides", () => {
+    it("--severity fonts:warn should downgrade fail to warn and exit 0", async () => {
+      const result = await runCli([
+        basicPdf,
+        "--checks", "fonts",
+        "--severity", "fonts:warn",
+        "--format", "json",
+      ]);
+      const json = JSON.parse(result.stdout);
+      expect(json.results[0].status).toBe("warn");
+      expect(result.exitCode).toBe(0);
+    });
+
+    it("--severity transparency:off should skip the check", async () => {
+      const result = await runCli([
+        basicPdf,
+        "--severity", "transparency:off",
+        "--format", "json",
+      ]);
+      const json = JSON.parse(result.stdout);
+      expect(json.results).toHaveLength(7);
+      const checkNames = json.results.map((r: { check: string }) => r.check);
+      expect(checkNames).not.toContain("Transparency");
+    });
+
+    it("should support multiple comma-separated overrides", async () => {
+      const result = await runCli([
+        basicPdf,
+        "--severity", "fonts:warn,transparency:off",
+        "--format", "json",
+      ]);
+      const json = JSON.parse(result.stdout);
+      expect(json.results).toHaveLength(7);
+      const fontsResult = json.results.find((r: { check: string }) => r.check === "Fonts");
+      expect(fontsResult.status).toBe("warn");
+    });
+
+    it("should read severity from config file", async () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "printcheck-"));
+      fs.writeFileSync(
+        path.join(tmpDir, ".printcheckrc"),
+        JSON.stringify({ severity: { fonts: "warn" } }),
+      );
+      const result = await runCli(
+        [basicPdf, "--checks", "fonts", "--format", "json"],
+        { cwd: tmpDir },
+      );
+      expect(result.stderr).toBe("");
+      const json = JSON.parse(result.stdout);
+      expect(json.results[0].status).toBe("warn");
+      expect(result.exitCode).toBe(0);
+      fs.rmSync(tmpDir, { recursive: true });
+    });
+
+    it("CLI --severity should merge with and override config severity", async () => {
+      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "printcheck-"));
+      fs.writeFileSync(
+        path.join(tmpDir, ".printcheckrc"),
+        JSON.stringify({ severity: { fonts: "off", transparency: "off" } }),
+      );
+      // CLI overrides fonts back to warn, transparency stays off from config
+      const result = await runCli(
+        [basicPdf, "--severity", "fonts:warn", "--format", "json"],
+        { cwd: tmpDir },
+      );
+      const json = JSON.parse(result.stdout);
+      const checkNames = json.results.map((r: { check: string }) => r.check);
+      expect(checkNames).not.toContain("Transparency");
+      const fontsResult = json.results.find((r: { check: string }) => r.check === "Fonts");
+      expect(fontsResult).toBeDefined();
+      expect(fontsResult.status).toBe("warn");
+      fs.rmSync(tmpDir, { recursive: true });
     });
   });
 });
