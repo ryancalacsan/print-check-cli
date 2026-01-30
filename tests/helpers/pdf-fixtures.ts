@@ -350,6 +350,95 @@ export async function createMixedSizePdf(): Promise<string> {
   return writePdf(doc, "mixed-size");
 }
 
+// ---------------------------------------------------------------------------
+// Stroke-based fixtures — trigger strokePath callbacks in checks
+// ---------------------------------------------------------------------------
+
+/**
+ * Helper: create a PDF with a CMYK stroked path via raw content stream operators.
+ * `K` sets CMYK stroke color (values 0–1), `re` draws a rect, `S` strokes it.
+ */
+async function createCmykStrokeRectPdf(
+  name: string,
+  c: number,
+  m: number,
+  y: number,
+  k: number,
+): Promise<string> {
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([612, 792]);
+  // Inject raw content stream with CMYK stroke (K = stroke color, S = stroke)
+  const stream = `5 w\n${c} ${m} ${y} ${k} K\n50 600 200 100 re\nS`;
+  const contentStream = doc.context.flateStream(stream);
+  const ref = doc.context.register(contentStream);
+  const pageDict = page.node;
+  const existingContents = pageDict.get(PDFName.of("Contents"));
+  if (existingContents) {
+    const arr = doc.context.obj([existingContents, ref]);
+    pageDict.set(PDFName.of("Contents"), arr);
+  } else {
+    pageDict.set(PDFName.of("Contents"), ref);
+  }
+  return writePdf(doc, name);
+}
+
+/** CMYK stroked path with safe TAC (~250%): triggers strokePath callbacks */
+export async function createCmykStrokedPdf(): Promise<string> {
+  return createCmykStrokeRectPdf("cmyk-stroked", 0.7, 0.6, 0.6, 0.6);
+}
+
+/** CMYK stroked path with high TAC (310%): triggers strokePath TAC failure */
+export async function createHighTacStrokedPdf(): Promise<string> {
+  return createCmykStrokeRectPdf("cmyk-stroked-high-tac", 0.8, 0.7, 0.7, 0.9);
+}
+
+/** RGB stroked path via raw content stream: RG (RGB stroke color) + S (stroke) */
+export async function createRgbStrokedPdf(): Promise<string> {
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([612, 792]);
+  // RG sets RGB stroke color, S strokes the path
+  const stream = `5 w\n1 0 0 RG\n50 600 200 100 re\nS`;
+  const contentStream = doc.context.flateStream(stream);
+  const ref = doc.context.register(contentStream);
+  const pageDict = page.node;
+  const existingContents = pageDict.get(PDFName.of("Contents"));
+  if (existingContents) {
+    const arr = doc.context.obj([existingContents, ref]);
+    pageDict.set(PDFName.of("Contents"), arr);
+  } else {
+    pageDict.set(PDFName.of("Contents"), ref);
+  }
+  return writePdf(doc, "rgb-stroked");
+}
+
+/** Stroked path with alpha transparency (via ExtGState) */
+export async function createTransparentStrokedPdf(): Promise<string> {
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([612, 792]);
+  // Create an ExtGState with CA (stroke alpha) = 0.5
+  const gsDict = doc.context.obj({ Type: "ExtGState", CA: 0.5 });
+  const gsRef = doc.context.register(gsDict);
+  // Build a resource dictionary referencing the GState
+  const stream = `/GS1 gs\n5 w\n0.7 0.6 0.6 0.6 K\n50 600 200 100 re\nS`;
+  const contentStream = doc.context.flateStream(stream);
+  const csRef = doc.context.register(contentStream);
+  const pageDict = page.node;
+  // Add ExtGState to page resources
+  const resources = pageDict.get(PDFName.of("Resources")) as PDFDict;
+  if (resources) {
+    const extGState = doc.context.obj({ GS1: gsRef });
+    resources.set(PDFName.of("ExtGState"), extGState);
+  }
+  const existingContents = pageDict.get(PDFName.of("Contents"));
+  if (existingContents) {
+    const arr = doc.context.obj([existingContents, csRef]);
+    pageDict.set(PDFName.of("Contents"), arr);
+  } else {
+    pageDict.set(PDFName.of("Contents"), csRef);
+  }
+  return writePdf(doc, "transparent-stroked");
+}
+
 /** Letter page with a 300×300px image drawn at 72×72pt (1in×1in).
  *  CTM-based DPI = 300. Old page-fill method would calculate ~39 DPI. */
 export async function createScaledImagePdf(): Promise<string> {

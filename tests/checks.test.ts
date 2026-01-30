@@ -30,6 +30,10 @@ import {
   createNearThresholdTacPdf,
   createTransparentPdf,
   createMixedSizePdf,
+  createCmykStrokedPdf,
+  createHighTacStrokedPdf,
+  createRgbStrokedPdf,
+  createTransparentStrokedPdf,
 } from "./helpers/pdf-fixtures.js";
 
 const defaultOptions: CheckOptions = {
@@ -57,6 +61,10 @@ let highTacPdf: string;
 let nearThresholdTacPdf: string;
 let transparentPdf: string;
 let mixedSizePdf: string;
+let cmykStrokedPdf: string;
+let highTacStrokedPdf: string;
+let rgbStrokedPdf: string;
+let transparentStrokedPdf: string;
 
 // PdfEngines loaded once per fixture
 let basicEngines: PdfEngines;
@@ -76,6 +84,10 @@ let highTacEngines: PdfEngines;
 let nearThresholdTacEngines: PdfEngines;
 let transparentEngines: PdfEngines;
 let mixedSizeEngines: PdfEngines;
+let cmykStrokedEngines: PdfEngines;
+let highTacStrokedEngines: PdfEngines;
+let rgbStrokedEngines: PdfEngines;
+let transparentStrokedEngines: PdfEngines;
 
 beforeAll(async () => {
   basicPdf = await createBasicPdf();
@@ -95,6 +107,10 @@ beforeAll(async () => {
   nearThresholdTacPdf = await createNearThresholdTacPdf();
   transparentPdf = await createTransparentPdf();
   mixedSizePdf = await createMixedSizePdf();
+  cmykStrokedPdf = await createCmykStrokedPdf();
+  highTacStrokedPdf = await createHighTacStrokedPdf();
+  rgbStrokedPdf = await createRgbStrokedPdf();
+  transparentStrokedPdf = await createTransparentStrokedPdf();
 
   basicEngines = await loadPdf(basicPdf);
   withBleedEngines = await loadPdf(withBleedPdf);
@@ -113,6 +129,10 @@ beforeAll(async () => {
   nearThresholdTacEngines = await loadPdf(nearThresholdTacPdf);
   transparentEngines = await loadPdf(transparentPdf);
   mixedSizeEngines = await loadPdf(mixedSizePdf);
+  cmykStrokedEngines = await loadPdf(cmykStrokedPdf);
+  highTacStrokedEngines = await loadPdf(highTacStrokedPdf);
+  rgbStrokedEngines = await loadPdf(rgbStrokedPdf);
+  transparentStrokedEngines = await loadPdf(transparentStrokedPdf);
 });
 
 // ---------------------------------------------------------------------------
@@ -187,6 +207,14 @@ describe("Font check", () => {
     const courierDetails = result.details.filter((d) => d.message.includes("Courier"));
     expect(courierDetails.length).toBe(1);
   });
+
+  it("should handle PDF with CMYK stroked content (no special fonts)", async () => {
+    // cmykStrokedPdf has no text/fonts, just vector strokes
+    const result = await checkFonts(cmykStrokedEngines, defaultOptions);
+    expect(result.check).toBe("Fonts");
+    // No fonts at all or only standard fonts — shouldn't crash
+    expect(["pass", "fail", "warn"]).toContain(result.status);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -232,6 +260,19 @@ describe("Color Space check", () => {
     const result = await checkColorSpace(basicEngines, defaultOptions);
     expect(result.check).toBe("Color Space");
     // Should complete without throwing
+  });
+
+  it("should detect RGB in stroked paths", async () => {
+    const result = await checkColorSpace(rgbStrokedEngines, defaultOptions);
+    expect(result.check).toBe("Color Space");
+    expect(result.status).toBe("fail");
+    expect(result.details.some((d) => d.message.includes("RGB") && d.message.includes("stroke"))).toBe(true);
+  });
+
+  it("should pass stroked CMYK paths in cmyk mode", async () => {
+    const result = await checkColorSpace(cmykStrokedEngines, defaultOptions);
+    expect(result.check).toBe("Color Space");
+    expect(result.status).toBe("pass");
   });
 });
 
@@ -348,6 +389,21 @@ describe("Total Ink Coverage check", () => {
     expect(result.summary).toContain("within TAC limit");
   });
 
+  it("should measure TAC from stroked CMYK paths", async () => {
+    const result = await checkTac(cmykStrokedEngines, defaultOptions);
+    expect(result.check).toBe("Total Ink Coverage");
+    expect(result.status).toBe("pass");
+    // Should detect CMYK ink from the stroked path
+    expect(result.details.length).toBeGreaterThan(0);
+  });
+
+  it("should fail for high TAC via stroked path", async () => {
+    const result = await checkTac(highTacStrokedEngines, defaultOptions);
+    expect(result.check).toBe("Total Ink Coverage");
+    expect(result.status).toBe("fail");
+    expect(result.summary).toContain("Max TAC:");
+  });
+
   it("should respect custom maxTac option", async () => {
     // Near-threshold PDF at ~285% should fail with a lower limit of 280%
     const result = await checkTac(nearThresholdTacEngines, {
@@ -384,6 +440,13 @@ describe("Transparency check", () => {
     expect(result.summary).toContain("Transparency detected");
     expect(result.details.length).toBeGreaterThan(0);
     expect(result.details[0].status).toBe("warn");
+  });
+
+  it("should detect transparency in stroked paths with alpha", async () => {
+    const result = await checkTransparency(transparentStrokedEngines, defaultOptions);
+    expect(result.check).toBe("Transparency");
+    expect(result.status).toBe("warn");
+    expect(result.summary).toContain("Transparency detected");
   });
 });
 
