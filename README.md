@@ -10,6 +10,7 @@ A Node.js + TypeScript CLI tool that validates print-ready PDF files. Runs four 
 | **Fonts** | Font embedding status (embedded, subset, or missing) |
 | **Color Space** | CMYK compliance, RGB detection, spot color reporting |
 | **Resolution** | Raster image DPI against a configurable minimum |
+| **PDF/X Compliance** | PDF/X standard detection (OutputIntents, version, output condition) — info only |
 
 ## Usage
 
@@ -101,7 +102,8 @@ src/
 │   ├── bleed-trim.ts       # Page box validation (pdf-lib)
 │   ├── fonts.ts            # Font embedding check (mupdf)
 │   ├── colorspace.ts       # Color space detection (mupdf)
-│   └── resolution.ts       # Image DPI check (mupdf)
+│   ├── resolution.ts       # Image DPI check (mupdf)
+│   └── pdfx-compliance.ts  # PDF/X standard detection (mupdf)
 ├── engine/
 │   ├── pdf-engine.ts       # Unified PDF document loader (mupdf + pdf-lib)
 │   └── pdf-utils.ts        # Safe wrappers for mupdf PDFObject API
@@ -129,5 +131,5 @@ npm test              # Run vitest
 - [x] Content stream operator parsing for inline color space usage
 - [x] JSON/CI-friendly output format (`--format json`)
 - [x] Configurable profiles (`--profile magazine` with preset thresholds)
-- [ ] PDF/X standard compliance detection
+- [x] PDF/X standard compliance detection
 - [x] Batch file processing (multiple file arguments)

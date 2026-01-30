@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, PDFName, PDFDict, PDFString, PDFArray } from "pdf-lib";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
@@ -240,6 +240,31 @@ export async function createNearThresholdDpiPdf(): Promise<string> {
   // Page = 1in x 1in (72pt). Image = 285x285px => 285 DPI
   const pagePt = 72;
   return createWithImagePdf(285, 285, pagePt, pagePt);
+}
+
+/** PDF with a PDF/X OutputIntent injected via pdf-lib's low-level context API */
+export async function createPdfxCompliantPdf(): Promise<string> {
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([612, 792]);
+  page.drawText("PDF/X Compliant", { x: 50, y: 700, size: 18 });
+
+  const context = doc.context;
+
+  // Build an OutputIntent dictionary
+  const outputIntentDict = context.obj({
+    Type: "OutputIntent",
+    S: "GTS_PDFX",
+    OutputConditionIdentifier: "FOGRA39",
+    Info: "Coated FOGRA39 (ISO 12647-2:2004)",
+    RegistryName: "http://www.color.org",
+  });
+
+  // Add OutputIntents array to the catalog
+  const catalog = context.lookup(context.trailerInfo.Root) as PDFDict;
+  const outputIntentsArray = context.obj([outputIntentDict]);
+  catalog.set(PDFName.of("OutputIntents"), outputIntentsArray);
+
+  return writePdf(doc, "pdfx-compliant");
 }
 
 /** Letter page with a 300×300px image drawn at 72×72pt (1in×1in).

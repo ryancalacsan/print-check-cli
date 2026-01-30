@@ -70,12 +70,13 @@ describe("CLI integration tests", { timeout: 30_000 }, () => {
   it("should include correct result count in JSON output", async () => {
     const result = await runCli([basicPdf, "--format", "json"]);
     const json = JSON.parse(result.stdout);
-    expect(json.results).toHaveLength(4);
+    expect(json.results).toHaveLength(5);
     const checkNames = json.results.map((r: { check: string }) => r.check);
     expect(checkNames).toContain("Bleed & Trim");
     expect(checkNames).toContain("Fonts");
     expect(checkNames).toContain("Color Space");
     expect(checkNames).toContain("Resolution");
+    expect(checkNames).toContain("PDF/X Compliance");
   });
 
   it("should respect --min-dpi option", async () => {

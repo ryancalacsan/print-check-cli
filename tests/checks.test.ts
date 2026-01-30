@@ -6,6 +6,7 @@ import { checkBleedTrim } from "../src/checks/bleed-trim.js";
 import { checkFonts } from "../src/checks/fonts.js";
 import { checkColorSpace } from "../src/checks/colorspace.js";
 import { checkResolution } from "../src/checks/resolution.js";
+import { checkPdfxCompliance } from "../src/checks/pdfx-compliance.js";
 import { loadPdf, type PdfEngines } from "../src/engine/pdf-engine.js";
 import type { CheckOptions } from "../src/types.js";
 import {
@@ -20,6 +21,7 @@ import {
   createNearThresholdDpiPdf,
   createScaledImagePdf,
   createRgbTextPdf,
+  createPdfxCompliantPdf,
 } from "./helpers/pdf-fixtures.js";
 
 const defaultOptions: CheckOptions = {
@@ -40,6 +42,7 @@ let nearThresholdPdf: string;
 let rgbImagePdf: string;
 let scaledImagePdf: string;
 let rgbTextPdf: string;
+let pdfxPdf: string;
 
 // PdfEngines loaded once per fixture
 let basicEngines: PdfEngines;
@@ -53,6 +56,7 @@ let nearThresholdEngines: PdfEngines;
 let rgbImageEngines: PdfEngines;
 let scaledImageEngines: PdfEngines;
 let rgbTextEngines: PdfEngines;
+let pdfxEngines: PdfEngines;
 
 beforeAll(async () => {
   basicPdf = await createBasicPdf();
@@ -66,6 +70,7 @@ beforeAll(async () => {
   rgbImagePdf = await createWithImagePdf(100, 100);
   scaledImagePdf = await createScaledImagePdf();
   rgbTextPdf = await createRgbTextPdf();
+  pdfxPdf = await createPdfxCompliantPdf();
 
   basicEngines = await loadPdf(basicPdf);
   withBleedEngines = await loadPdf(withBleedPdf);
@@ -78,6 +83,7 @@ beforeAll(async () => {
   rgbImageEngines = await loadPdf(rgbImagePdf);
   scaledImageEngines = await loadPdf(scaledImagePdf);
   rgbTextEngines = await loadPdf(rgbTextPdf);
+  pdfxEngines = await loadPdf(pdfxPdf);
 });
 
 // ---------------------------------------------------------------------------
@@ -251,6 +257,27 @@ describe("Resolution check", () => {
     // Same PDF should fail with very high threshold
     const result2 = await checkResolution(highDpiEngines, { ...defaultOptions, minDpi: 700 });
     expect(result2.status).toBe("fail");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PDF/X Compliance
+// ---------------------------------------------------------------------------
+
+describe("PDF/X Compliance check", () => {
+  it("should detect PDF/X OutputIntent", async () => {
+    const result = await checkPdfxCompliance(pdfxEngines, defaultOptions);
+    expect(result.check).toBe("PDF/X Compliance");
+    expect(result.status).toBe("pass");
+    expect(result.details.some((d) => d.message.includes("GTS_PDFX"))).toBe(true);
+    expect(result.details.some((d) => d.message.includes("FOGRA39"))).toBe(true);
+  });
+
+  it("should pass with info when no PDF/X", async () => {
+    const result = await checkPdfxCompliance(basicEngines, defaultOptions);
+    expect(result.check).toBe("PDF/X Compliance");
+    expect(result.status).toBe("pass");
+    expect(result.summary).toContain("No PDF/X");
   });
 });
 

@@ -7,6 +7,7 @@ import {
   checkFonts,
   checkColorSpace,
   checkResolution,
+  checkPdfxCompliance,
 } from "./checks/index.js";
 import { loadPdf } from "./engine/pdf-engine.js";
 import { printReport } from "./reporter/console.js";
@@ -19,6 +20,7 @@ const ALL_CHECKS: Record<string, CheckFn> = {
   fonts: checkFonts,
   colorspace: checkColorSpace,
   resolution: checkResolution,
+  pdfx: checkPdfxCompliance,
 };
 
 const OptionsSchema = z.object({
