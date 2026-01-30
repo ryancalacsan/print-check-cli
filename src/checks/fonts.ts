@@ -1,5 +1,4 @@
 import type { CheckFn, CheckResult, CheckDetail } from "../types.js";
-import { loadPdf } from "../engine/pdf-engine.js";
 import {
   safeResolve,
   safeGet,
@@ -71,8 +70,8 @@ function hasEmbeddedFile(descriptor: PDFObject | undefined): boolean {
   );
 }
 
-export const checkFonts: CheckFn = async (filePath) => {
-  const { mupdf: doc } = await loadPdf(filePath);
+export const checkFonts: CheckFn = async (engines) => {
+  const { mupdf: doc } = engines;
   const details: CheckDetail[] = [];
   const seen = new Set<string>();
   const allFonts: FontInfo[] = [];

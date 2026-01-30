@@ -6,6 +6,7 @@ import { checkBleedTrim } from "../src/checks/bleed-trim.js";
 import { checkFonts } from "../src/checks/fonts.js";
 import { checkColorSpace } from "../src/checks/colorspace.js";
 import { checkResolution } from "../src/checks/resolution.js";
+import { loadPdf, type PdfEngines } from "../src/engine/pdf-engine.js";
 import type { CheckOptions } from "../src/types.js";
 import {
   createBasicPdf,
@@ -36,6 +37,17 @@ let lowDpiPdf: string;
 let nearThresholdPdf: string;
 let rgbImagePdf: string;
 
+// PdfEngines loaded once per fixture
+let basicEngines: PdfEngines;
+let withBleedEngines: PdfEngines;
+let insufficientBleedEngines: PdfEngines;
+let mixedBleedEngines: PdfEngines;
+let embeddedFontEngines: PdfEngines;
+let highDpiEngines: PdfEngines;
+let lowDpiEngines: PdfEngines;
+let nearThresholdEngines: PdfEngines;
+let rgbImageEngines: PdfEngines;
+
 beforeAll(async () => {
   basicPdf = await createBasicPdf();
   withBleedPdf = await createWithBleedPdf(4);
@@ -46,6 +58,16 @@ beforeAll(async () => {
   lowDpiPdf = await createLowDpiImagePdf();
   nearThresholdPdf = await createNearThresholdDpiPdf();
   rgbImagePdf = await createWithImagePdf(100, 100);
+
+  basicEngines = await loadPdf(basicPdf);
+  withBleedEngines = await loadPdf(withBleedPdf);
+  insufficientBleedEngines = await loadPdf(insufficientBleedPdf);
+  mixedBleedEngines = await loadPdf(mixedBleedPdf);
+  embeddedFontEngines = await loadPdf(embeddedFontPdf);
+  highDpiEngines = await loadPdf(highDpiPdf);
+  lowDpiEngines = await loadPdf(lowDpiPdf);
+  nearThresholdEngines = await loadPdf(nearThresholdPdf);
+  rgbImageEngines = await loadPdf(rgbImagePdf);
 });
 
 // ---------------------------------------------------------------------------
@@ -54,26 +76,26 @@ beforeAll(async () => {
 
 describe("Bleed & Trim check", () => {
   it("should warn when TrimBox/BleedBox are missing", async () => {
-    const result = await checkBleedTrim(basicPdf, defaultOptions);
+    const result = await checkBleedTrim(basicEngines, defaultOptions);
     expect(result.check).toBe("Bleed & Trim");
     expect(result.status).toBe("warn");
     expect(result.details[0].message).toContain("No TrimBox or BleedBox");
   });
 
   it("should pass with sufficient bleed (3mm+)", async () => {
-    const result = await checkBleedTrim(withBleedPdf, defaultOptions);
+    const result = await checkBleedTrim(withBleedEngines, defaultOptions);
     expect(result.status).toBe("pass");
     expect(result.details[0].message).toContain("Bleed OK");
   });
 
   it("should fail with insufficient bleed", async () => {
-    const result = await checkBleedTrim(insufficientBleedPdf, defaultOptions);
+    const result = await checkBleedTrim(insufficientBleedEngines, defaultOptions);
     expect(result.status).toBe("fail");
     expect(result.details[0].message).toContain("Insufficient bleed");
   });
 
   it("should report per-page status on multi-page PDFs", async () => {
-    const result = await checkBleedTrim(mixedBleedPdf, defaultOptions);
+    const result = await checkBleedTrim(mixedBleedEngines, defaultOptions);
     // Overall status should be fail (page 3 has insufficient bleed)
     expect(result.status).toBe("fail");
     expect(result.details.length).toBe(3);
@@ -98,7 +120,7 @@ describe("Bleed & Trim check", () => {
 
 describe("Font check", () => {
   it("should detect unembedded standard fonts", async () => {
-    const result = await checkFonts(basicPdf, defaultOptions);
+    const result = await checkFonts(basicEngines, defaultOptions);
     expect(result.check).toBe("Fonts");
     expect(result.status).toBe("fail");
     expect(result.details.some((d) => d.message.includes("not embedded"))).toBe(true);
@@ -108,14 +130,14 @@ describe("Font check", () => {
     // pdf-lib StandardFonts don't actually get embedded, but check the detection
     // path still works without crashing. The Courier font from embeddedFontPdf
     // will be detected as not-embedded (standard font behavior in pdf-lib).
-    const result = await checkFonts(embeddedFontPdf, defaultOptions);
+    const result = await checkFonts(embeddedFontEngines, defaultOptions);
     expect(result.check).toBe("Fonts");
     // Standard fonts in pdf-lib are not embedded
     expect(["fail", "warn"]).toContain(result.status);
   });
 
   it("should deduplicate fonts across pages", async () => {
-    const result = await checkFonts(embeddedFontPdf, defaultOptions);
+    const result = await checkFonts(embeddedFontEngines, defaultOptions);
     // Courier used on 2 pages but should appear only once in details
     const courierDetails = result.details.filter((d) => d.message.includes("Courier"));
     expect(courierDetails.length).toBe(1);
@@ -128,14 +150,14 @@ describe("Font check", () => {
 
 describe("Color Space check", () => {
   it("should pass when no RGB color spaces are used", async () => {
-    const result = await checkColorSpace(basicPdf, defaultOptions);
+    const result = await checkColorSpace(basicEngines, defaultOptions);
     expect(result.check).toBe("Color Space");
     // Basic pdf-lib PDF with text only should pass or warn
     expect(["pass", "warn"]).toContain(result.status);
   });
 
   it("should skip when color-space is 'any'", async () => {
-    const result = await checkColorSpace(basicPdf, {
+    const result = await checkColorSpace(basicEngines, {
       ...defaultOptions,
       colorSpace: "any",
     });
@@ -144,7 +166,7 @@ describe("Color Space check", () => {
   });
 
   it("should fail when image uses RGB color space", async () => {
-    const result = await checkColorSpace(rgbImagePdf, defaultOptions);
+    const result = await checkColorSpace(rgbImageEngines, defaultOptions);
     expect(result.check).toBe("Color Space");
     // An embedded PNG is RGB — should be detected
     expect(["fail", "warn"]).toContain(result.status);
@@ -152,7 +174,7 @@ describe("Color Space check", () => {
 
   it("should handle OutputIntents without crashing", async () => {
     // The basic PDF has no OutputIntents — check it doesn't crash
-    const result = await checkColorSpace(basicPdf, defaultOptions);
+    const result = await checkColorSpace(basicEngines, defaultOptions);
     expect(result.check).toBe("Color Space");
     // Should complete without throwing
   });
@@ -164,27 +186,27 @@ describe("Color Space check", () => {
 
 describe("Resolution check", () => {
   it("should pass when no raster images exist", async () => {
-    const result = await checkResolution(basicPdf, defaultOptions);
+    const result = await checkResolution(basicEngines, defaultOptions);
     expect(result.check).toBe("Resolution");
     expect(result.status).toBe("pass");
     expect(result.summary).toContain("No raster images");
   });
 
   it("should pass with high-DPI image (≥300)", async () => {
-    const result = await checkResolution(highDpiPdf, defaultOptions);
+    const result = await checkResolution(highDpiEngines, defaultOptions);
     expect(result.status).toBe("pass");
     expect(result.details.length).toBeGreaterThan(0);
     expect(result.details[0].status).toBe("pass");
   });
 
   it("should fail with low-DPI image", async () => {
-    const result = await checkResolution(lowDpiPdf, defaultOptions);
+    const result = await checkResolution(lowDpiEngines, defaultOptions);
     expect(result.status).toBe("fail");
     expect(result.details.some((d) => d.status === "fail")).toBe(true);
   });
 
   it("should warn near threshold", async () => {
-    const result = await checkResolution(nearThresholdPdf, defaultOptions);
+    const result = await checkResolution(nearThresholdEngines, defaultOptions);
     // 285 DPI is between 270 (90% of 300) and 300 — should be warn
     expect(result.status).toBe("warn");
     expect(result.details.some((d) => d.status === "warn")).toBe(true);
@@ -192,28 +214,28 @@ describe("Resolution check", () => {
 
   it("should respect custom minDpi option", async () => {
     // High DPI PDF (600 DPI) should pass even with higher threshold
-    const result = await checkResolution(highDpiPdf, { ...defaultOptions, minDpi: 500 });
+    const result = await checkResolution(highDpiEngines, { ...defaultOptions, minDpi: 500 });
     expect(result.status).toBe("pass");
 
     // Same PDF should fail with very high threshold
-    const result2 = await checkResolution(highDpiPdf, { ...defaultOptions, minDpi: 700 });
+    const result2 = await checkResolution(highDpiEngines, { ...defaultOptions, minDpi: 700 });
     expect(result2.status).toBe("fail");
   });
 });
 
 // ---------------------------------------------------------------------------
-// Error handling
+// Error handling (tests loadPdf directly)
 // ---------------------------------------------------------------------------
 
 describe("Error handling", () => {
   it("should fail gracefully for non-existent file", async () => {
     const fakePath = path.join(os.tmpdir(), "does-not-exist.pdf");
-    await expect(checkBleedTrim(fakePath, defaultOptions)).rejects.toThrow();
+    await expect(loadPdf(fakePath)).rejects.toThrow();
   });
 
   it("should fail gracefully for corrupted PDF", async () => {
     const corruptPath = path.join(os.tmpdir(), "print-check-corrupt.pdf");
     fs.writeFileSync(corruptPath, "this is not a pdf");
-    await expect(checkBleedTrim(corruptPath, defaultOptions)).rejects.toThrow();
+    await expect(loadPdf(corruptPath)).rejects.toThrow();
   });
 });

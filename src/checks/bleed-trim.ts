@@ -1,10 +1,9 @@
 import type { CheckFn, CheckResult, CheckDetail } from "../types.js";
-import { loadPdf } from "../engine/pdf-engine.js";
 
 const PT_TO_MM = 25.4 / 72;
 
-export const checkBleedTrim: CheckFn = async (filePath, options) => {
-  const { pdfLib } = await loadPdf(filePath);
+export const checkBleedTrim: CheckFn = async (engines, options) => {
+  const { pdfLib } = engines;
   const pages = pdfLib.getPages();
   const details: CheckDetail[] = [];
   let worstStatus: CheckResult["status"] = "pass";

@@ -1,5 +1,4 @@
 import type { CheckFn, CheckResult, CheckDetail } from "../types.js";
-import { loadPdf } from "../engine/pdf-engine.js";
 import {
   safeResolve,
   safeGet,
@@ -12,8 +11,8 @@ import type { PDFObject } from "mupdf";
 
 const PT_TO_INCH = 1 / 72;
 
-export const checkResolution: CheckFn = async (filePath, options) => {
-  const { mupdf: doc } = await loadPdf(filePath);
+export const checkResolution: CheckFn = async (engines, options) => {
+  const { mupdf: doc } = engines;
   const details: CheckDetail[] = [];
   let worstStatus: CheckResult["status"] = "pass";
 

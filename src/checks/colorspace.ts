@@ -1,5 +1,4 @@
 import type { CheckFn, CheckResult, CheckDetail } from "../types.js";
-import { loadPdf } from "../engine/pdf-engine.js";
 import {
   safeResolve,
   safeGet,
@@ -43,7 +42,7 @@ function hasRGBProfile(csObj: PDFObject): boolean {
   return false;
 }
 
-export const checkColorSpace: CheckFn = async (filePath, options) => {
+export const checkColorSpace: CheckFn = async (engines, options) => {
   if (options.colorSpace === "any") {
     return {
       check: "Color Space",
@@ -53,7 +52,7 @@ export const checkColorSpace: CheckFn = async (filePath, options) => {
     };
   }
 
-  const { mupdf: doc } = await loadPdf(filePath);
+  const { mupdf: doc } = engines;
   const details: CheckDetail[] = [];
   let worstStatus: CheckResult["status"] = "pass";
   const rgbPages: number[] = [];

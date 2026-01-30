@@ -8,7 +8,9 @@ import {
   checkColorSpace,
   checkResolution,
 } from "./checks/index.js";
+import { loadPdf } from "./engine/pdf-engine.js";
 import { printReport } from "./reporter/console.js";
+import { printJsonReport } from "./reporter/json.js";
 import type { CheckFn, CheckOptions } from "./types.js";
 
 const ALL_CHECKS: Record<string, CheckFn> = {
@@ -27,6 +29,7 @@ const OptionsSchema = z.object({
     .default("all")
     .transform((val) => (val === "all" ? Object.keys(ALL_CHECKS) : val.split(",").map((s) => s.trim()))),
   verbose: z.boolean().default(false),
+  format: z.enum(["text", "json"]).default("text"),
 });
 
 const program = new Command();
@@ -41,6 +44,7 @@ program
   .option("--bleed <mm>", "Required bleed in mm", "3")
   .option("--checks <list>", "Comma-separated checks to run", "all")
   .option("--verbose", "Show detailed per-page results", false)
+  .option("--format <type>", "Output format: text | json", "text")
   .action(async (file: string, rawOpts: Record<string, unknown>) => {
     const parsed = OptionsSchema.safeParse(rawOpts);
     if (!parsed.success) {
@@ -75,10 +79,12 @@ program
       process.exit(1);
     }
 
+    const engines = await loadPdf(filePath);
+
     const results = [];
     for (const name of checksToRun) {
       try {
-        const result = await ALL_CHECKS[name](filePath, checkOptions);
+        const result = await ALL_CHECKS[name](engines, checkOptions);
         results.push(result);
       } catch (err) {
         results.push({
@@ -90,7 +96,11 @@ program
       }
     }
 
-    printReport(path.basename(filePath), results, opts.verbose);
+    if (opts.format === "json") {
+      printJsonReport(path.basename(filePath), results);
+    } else {
+      printReport(path.basename(filePath), results, opts.verbose);
+    }
 
     const hasFail = results.some((r) => r.status === "fail");
     process.exit(hasFail ? 1 : 0);

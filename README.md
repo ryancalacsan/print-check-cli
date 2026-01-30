@@ -22,6 +22,7 @@ Options:
   --bleed <mm>             Required bleed in mm (default: 3)
   --checks <list>          Comma-separated checks to run (default: all)
   --verbose                Show detailed per-page results
+  --format <type>          Output format: text | json (default: text)
   -V, --version            Output version
   -h, --help               Show help
 ```
@@ -40,6 +41,9 @@ print-check flyer.pdf --checks fonts,bleed
 
 # Skip color space enforcement
 print-check flyer.pdf --color-space any
+
+# JSON output for CI pipelines
+print-check flyer.pdf --format json
 ```
 
 ### Exit codes
@@ -75,7 +79,8 @@ src/
 │   ├── pdf-engine.ts       # Unified PDF document loader (mupdf + pdf-lib)
 │   └── pdf-utils.ts        # Safe wrappers for mupdf PDFObject API
 └── reporter/
-    └── console.ts          # Terminal output formatter
+    ├── console.ts          # Terminal output formatter
+    └── json.ts             # JSON output formatter (--format json)
 ```
 
 ## Development
@@ -97,7 +102,7 @@ npm test              # Run vitest
 
 - [ ] CTM-based DPI calculation for accurate per-image resolution
 - [ ] Content stream operator parsing for inline color space usage
-- [ ] JSON/CI-friendly output format (`--format json`)
+- [x] JSON/CI-friendly output format (`--format json`)
 - [ ] Configurable profiles (e.g., `--profile magazine` with preset thresholds)
 - [ ] PDF/X standard compliance detection
 - [ ] Batch file processing (glob patterns)

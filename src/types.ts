@@ -1,3 +1,5 @@
+import type { PdfEngines } from "./engine/pdf-engine.js";
+
 export type CheckStatus = "pass" | "warn" | "fail";
 
 export interface CheckDetail {
@@ -20,6 +22,18 @@ export interface CheckOptions {
 }
 
 export type CheckFn = (
-  filePath: string,
+  engines: PdfEngines,
   options: CheckOptions,
 ) => Promise<CheckResult>;
+
+export type OutputFormat = "text" | "json";
+
+export interface JsonReport {
+  file: string;
+  results: CheckResult[];
+  summary: {
+    passed: number;
+    warned: number;
+    failed: number;
+  };
+}
