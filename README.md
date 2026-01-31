@@ -1,5 +1,6 @@
 # print-check-cli
 
+[![npm](https://img.shields.io/npm/v/print-check-cli)](https://www.npmjs.com/package/print-check-cli)
 [![CI](https://github.com/ryancalacsan/print-check-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/ryancalacsan/print-check-cli/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/ryancalacsan/print-check-cli/graph/badge.svg)](https://codecov.io/gh/ryancalacsan/print-check-cli)
 
