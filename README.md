@@ -5,6 +5,10 @@
 
 A Node.js + TypeScript CLI tool that validates print-ready PDF files. Runs eight checks and reports pass/warn/fail results in the terminal.
 
+## Demo
+
+![print-check demo](demo/demo.gif)
+
 ## Checks
 
 | Check                  | What it validates                                                               |
