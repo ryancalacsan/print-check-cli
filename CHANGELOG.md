@@ -5,10 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.0.1] - 2026-01-30
 
 ### Added
 
+- Demo terminal recording (GIF) in README
 - CONTRIBUTING.md with development setup, coding standards, and PR guidelines
 - Pre-commit hooks via husky and lint-staged (auto-lint and format on commit)
 - Node 20 and 22 version matrix in CI
@@ -41,4 +42,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Provenance attestation on published packages
 - GitHub issue and PR templates
 
+[1.0.1]: https://github.com/ryancalacsan/print-check-cli/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ryancalacsan/print-check-cli/releases/tag/v1.0.0
