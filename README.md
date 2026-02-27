@@ -6,11 +6,24 @@
 
 A Node.js + TypeScript CLI tool that validates print-ready PDF files. Runs eight checks and reports pass/warn/fail results in the terminal.
 
+**[View on npm](https://www.npmjs.com/package/print-check-cli)**
+
+![print-check-cli Preview](./preview.png)
+
 ## Demo
 
 ![print-check demo](demo/demo.gif)
 
-## Checks
+## Features
+
+- **8 prepress checks** — bleed/trim boxes, font embedding, color space (CMYK/RGB), image DPI, PDF/X compliance, total ink coverage, transparency, and page size consistency
+- **Built-in print profiles** — presets for standard, magazine, newspaper, and large-format workflows with one `--profile` flag
+- **Per-check severity overrides** — downgrade failures to warnings or skip checks entirely with `--severity fonts:warn,transparency:off`
+- **Multi-file support** — validate entire directories with shell globbing (`print-check *.pdf`)
+- **JSON output for CI** — structured JSON reports via `--format json` for pipeline integration
+- **RC file configuration** — set project defaults in `.printcheckrc`, `.printcheckrc.json`, or `printcheck.config.js` with auto-discovery
+- **Dual PDF engine** — combines mupdf (WASM-powered deep object traversal) with pdf-lib (page box reading) for thorough analysis
+- **Colorized terminal output** — clear pass/warn/fail results with verbose per-page detail mode
 
 | Check                  | What it validates                                                               |
 | ---------------------- | ------------------------------------------------------------------------------- |
@@ -23,7 +36,29 @@ A Node.js + TypeScript CLI tool that validates print-ready PDF files. Runs eight
 | **Transparency**       | Detects unflattened transparency (groups, soft masks, blend modes)              |
 | **Page Size**          | Verifies consistent page dimensions and optional expected size match            |
 
-## Usage
+## Tech Stack
+
+| Package                                                 | Purpose                                                     |
+| ------------------------------------------------------- | ----------------------------------------------------------- |
+| [mupdf](https://www.npmjs.com/package/mupdf) (mupdf.js) | PDF engine — WASM-powered, deep PDF object traversal        |
+| [pdf-lib](https://www.npmjs.com/package/pdf-lib)        | Supplemental — reading page boxes (TrimBox, BleedBox, etc.) |
+| [commander](https://www.npmjs.com/package/commander)    | CLI framework                                               |
+| [picocolors](https://www.npmjs.com/package/picocolors)  | Terminal colors                                             |
+| [zod](https://www.npmjs.com/package/zod)                | CLI option validation                                       |
+| [tsup](https://www.npmjs.com/package/tsup)              | TypeScript build                                            |
+| [vitest](https://www.npmjs.com/package/vitest)          | Testing                                                     |
+
+## Getting Started
+
+```bash
+# Install globally
+npm install -g print-check-cli
+
+# Or run directly with npx
+npx print-check-cli flyer.pdf
+```
+
+### Usage
 
 ```
 print-check <file.pdf ...> [options]
@@ -88,11 +123,6 @@ Built-in profiles provide preset thresholds for common print scenarios. Explicit
 | `newspaper`    | 150    | any        | 0       | 240    | Newsprint / low-fidelity           |
 | `large-format` | 150    | cmyk       | 5       | 300    | Banners, posters, signage          |
 
-### Exit codes
-
-- `0` — all checks passed (or warned)
-- `1` — one or more checks failed
-
 ### Severity Overrides
 
 Override the default severity for any check using `--severity`:
@@ -116,11 +146,16 @@ print-check flyer.pdf --severity fonts:warn,transparency:off
 
 Available check names: `bleed`, `fonts`, `colorspace`, `resolution`, `pdfx`, `tac`, `transparency`, `pagesize`.
 
-## Configuration
+### Exit Codes
+
+- `0` — all checks passed (or warned)
+- `1` — one or more checks failed
+
+### Configuration
 
 Create a config file to set default options for your project:
 
-### `.printcheckrc` / `.printcheckrc.json`
+#### `.printcheckrc` / `.printcheckrc.json`
 
 ```json
 {
@@ -137,7 +172,7 @@ Create a config file to set default options for your project:
 }
 ```
 
-### `printcheck.config.js`
+#### `printcheck.config.js`
 
 ```js
 export default {
@@ -150,18 +185,6 @@ export default {
 
 Config files are auto-discovered from the current directory upward.
 CLI flags always override config file values.
-
-## Tech Stack
-
-| Package                                                 | Purpose                                                     |
-| ------------------------------------------------------- | ----------------------------------------------------------- |
-| [mupdf](https://www.npmjs.com/package/mupdf) (mupdf.js) | PDF engine — WASM-powered, deep PDF object traversal        |
-| [pdf-lib](https://www.npmjs.com/package/pdf-lib)        | Supplemental — reading page boxes (TrimBox, BleedBox, etc.) |
-| [commander](https://www.npmjs.com/package/commander)    | CLI framework                                               |
-| [picocolors](https://www.npmjs.com/package/picocolors)  | Terminal colors                                             |
-| [zod](https://www.npmjs.com/package/zod)                | CLI option validation                                       |
-| [tsup](https://www.npmjs.com/package/tsup)              | TypeScript build                                            |
-| [vitest](https://www.npmjs.com/package/vitest)          | Testing                                                     |
 
 ## Project Structure
 
@@ -200,6 +223,14 @@ npm run format:check  # Prettier check
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for full development guidelines.
+
+## Deployment
+
+Published to npm via GitHub Actions with [OIDC trusted publishing](https://docs.npmjs.com/generating-provenance-statements). Every release includes a verified provenance attestation.
+
+```bash
+npm install -g print-check-cli
+```
 
 ## Known Limitations (MVP)
 
