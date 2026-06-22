@@ -2,6 +2,10 @@ import { Command } from "commander";
 import { z } from "zod";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json") as { version: string };
 import {
   checkBleedTrim,
   checkFonts,
@@ -91,7 +95,7 @@ const program = new Command();
 program
   .name("print-check")
   .description("Validate print-ready PDF files")
-  .version("1.0.0")
+  .version(version)
   .argument("<files...>", "PDF file(s) to check")
   .option("--min-dpi <number>", "Minimum acceptable DPI")
   .option("--color-space <mode>", "Expected color space: cmyk | any")
