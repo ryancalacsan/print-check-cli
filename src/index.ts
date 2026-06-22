@@ -19,12 +19,18 @@ import { PROFILES, PROFILE_NAMES } from "./profiles.js";
 import { loadConfig } from "./config.js";
 import type { CheckFn, CheckOptions, CheckResult, JsonReport, SeverityOverride } from "./types.js";
 
-function parseSeverityString(val: string): Record<string, string> {
+const SEVERITY_LEVELS: readonly SeverityOverride[] = ["fail", "warn", "off"];
+
+function isSeverityOverride(level: string): level is SeverityOverride {
+  return (SEVERITY_LEVELS as readonly string[]).includes(level);
+}
+
+function parseSeverityString(val: string): Record<string, SeverityOverride> {
   if (!val.trim()) return {};
-  const result: Record<string, string> = {};
+  const result: Record<string, SeverityOverride> = {};
   for (const pair of val.split(",")) {
     const [check, level] = pair.split(":").map((s) => s.trim());
-    if (check && level) result[check] = level;
+    if (check && level && isSeverityOverride(level)) result[check] = level;
   }
   return result;
 }

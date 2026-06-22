@@ -18,11 +18,11 @@ interface FontInfo {
 function collectFonts(fontDict: PDFObject, pageNum: number, seen: Set<string>): FontInfo[] {
   const fonts: FontInfo[] = [];
 
-  safeForEach(fontDict, (value: PDFObject, key: string) => {
+  safeForEach(fontDict, (value: PDFObject, key: string | number) => {
     const font = safeResolve(value);
     if (!font) return;
 
-    const baseFontName = safeName(safeGet(font, "BaseFont")) ?? key;
+    const baseFontName = safeName(safeGet(font, "BaseFont")) ?? String(key);
 
     if (seen.has(baseFontName)) return;
     seen.add(baseFontName);
