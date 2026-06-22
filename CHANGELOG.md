@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] - 2026-06-22
+
+### Fixed
+
+- `--version` now reports the actual package version (was hardcoded to `1.0.0`); the version is read dynamically from `package.json` so it can no longer drift
+- Resolved latent type errors in `safeForEach` and severity parsing (behavior-preserving)
+
+### Changed
+
+- Updated development dependencies and cleared all security advisories (`npm audit` reports 0 vulnerabilities)
+- Upgraded to ESLint 10 and `@types/node` 26
+- Bumped GitHub Actions `checkout` and `setup-node` to v5
+
+### Added
+
+- `typecheck` script (`tsc --noEmit`) wired into CI to catch type errors that the esbuild-based build and tests previously skipped
+
 ## [1.0.1] - 2026-01-30
 
 ### Added
@@ -42,5 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Provenance attestation on published packages
 - GitHub issue and PR templates
 
+[1.0.2]: https://github.com/ryancalacsan/print-check-cli/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ryancalacsan/print-check-cli/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ryancalacsan/print-check-cli/releases/tag/v1.0.0
