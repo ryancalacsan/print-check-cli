@@ -45,7 +45,7 @@ export function safeString(obj: PDFObject | undefined): string | undefined {
 /** Safe forEach that handles null objects */
 export function safeForEach(
   obj: PDFObject | undefined,
-  callback: (value: PDFObject, key: string) => void,
+  callback: (value: PDFObject, key: string | number) => void,
 ): void {
   if (!obj || obj.isNull()) return;
   obj.forEach(callback);
